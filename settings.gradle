@@ -1,0 +1,2 @@
+include ':loupesample', ':loupe'
+rootProject.name='loupe'
