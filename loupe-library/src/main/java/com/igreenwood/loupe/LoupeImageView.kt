@@ -6,8 +6,12 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.widget.ImageView
 import timber.log.Timber
+import kotlin.math.max
+import kotlin.math.min
 
 class LoupeImageView @JvmOverloads constructor(
     context: Context,
@@ -29,10 +33,29 @@ class LoupeImageView @JvmOverloads constructor(
     private var maxScale = 1f
     private var imageWidth = 0f
     private var imageHeight = 0f
-    private var drawable = null
+    private var scaleGestureDetector: ScaleGestureDetector? = null
+    private val onScaleGestureListenner: ScaleGestureDetector.OnScaleGestureListener = object : ScaleGestureDetector.OnScaleGestureListener{
+
+        override fun onScale(detector: ScaleGestureDetector?): Boolean {
+            Timber.e("onScale")
+            detector?.run {
+                scale = calcNewScale(scaleFactor)
+                // scale has changed, recalculate bitmap bounds
+                calcBounds()
+                // タッチした場所が中心になるようにしたほうが良さそう
+                constrainBitmapBounds()
+                invalidate()
+            }
+            return true
+        }
+
+        override fun onScaleBegin(p0: ScaleGestureDetector?): Boolean = true
+
+        override fun onScaleEnd(p0: ScaleGestureDetector?) {}
+    }
 
     init {
-
+        scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListenner)
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
@@ -105,9 +128,9 @@ class LoupeImageView @JvmOverloads constructor(
         val canvasWidth = (width - paddingLeft - paddingRight).toFloat()
         val canvasHeight = (height - paddingTop - paddingBottom).toFloat()
 
-        setupScale(canvasWidth, canvasHeight, imageWidth, imageHeight)
-        setupBounds(imageWidth, imageHeight)
-//        constrainBitmapBounds()
+        calcScaleRange(canvasWidth, canvasHeight, imageWidth, imageHeight)
+        calcBounds()
+        constrainBitmapBounds()
         isReadyToDraw = true
         invalidate()
     }
@@ -134,7 +157,7 @@ class LoupeImageView @JvmOverloads constructor(
     /**
      * calc canvas/bitmap bounds
      */
-    private fun setupBounds(imgWidth: Float, imgHeight: Float) {
+    private fun calcBounds() {
         Timber.e("setupBoundsd start")
         canvasBounds = RectF(
             paddingLeft.toFloat(),
@@ -143,10 +166,10 @@ class LoupeImageView @JvmOverloads constructor(
             height -paddingBottom.toFloat()
         )
         bitmapBounds = RectF(
-            canvasBounds.centerX() - imgWidth * scale * 0.5f + offset.x,
-            canvasBounds.centerY() - imgHeight * scale * 0.5f + offset.y,
-            canvasBounds.centerX() + imgWidth * scale * 0.5f + offset.x,
-            canvasBounds.centerY() + imgHeight * scale * 0.5f + offset.y
+            canvasBounds.centerX() - imageWidth * scale * 0.5f + offset.x,
+            canvasBounds.centerY() - imageHeight * scale * 0.5f + offset.y,
+            canvasBounds.centerX() + imageWidth * scale * 0.5f + offset.x,
+            canvasBounds.centerY() + imageHeight * scale * 0.5f + offset.y
         )
         // calc max bitmap bounds
         maxBitmapBounds = RectF(bitmapBounds)
@@ -176,7 +199,7 @@ class LoupeImageView @JvmOverloads constructor(
     /**
      * calc min/max scale and set initial scale
      */
-    private fun setupScale(
+    private fun calcScaleRange(
         canvasWidth: Float,
         canvasHeight: Float,
         bitmapWidth: Float,
@@ -194,5 +217,25 @@ class LoupeImageView @JvmOverloads constructor(
         maxScale = minScale * 2f
         Timber.e("setupScale: canvasWidth = $canvasWidth, bitmapWidth = $bitmapWidth, canvasHeight = $canvasHeight, bitmapHeight = $bitmapHeight")
         Timber.e("setupScale: canvasRatio = $canvasRatio, bitmapRatio = $bitmapRatio, minScale = $minScale")
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
+        val result = super.dispatchTouchEvent(event)
+
+        if(!isEnabled){
+            return result
+        }
+
+        scaleGestureDetector?.onTouchEvent(event)
+
+        return true
+    }
+
+    private fun calcNewScale(newScale: Float): Float {
+        return constrain(minScale, newScale * scale, maxScale)
+    }
+
+    private fun constrain(min: Float, value: Float, max: Float): Float {
+        return max(min(value, max), min)
     }
 }
