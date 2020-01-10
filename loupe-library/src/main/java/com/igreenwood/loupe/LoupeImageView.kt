@@ -6,6 +6,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.AttributeSet
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.widget.ImageView
@@ -19,43 +20,104 @@ class LoupeImageView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : ImageView(context, attrs, defStyleAttr) {
 
+    companion object{
+        const val DEFAULT_MAX_ZOOM = 4.0f
+    }
+
+    // bitmap matrix
     private var transfrom = Matrix()
+    // bitmap scale
     private var scale = 1f
+    // is ready for drawing bitmap
     private var isReadyToDraw = false
+    // bitmap paint
     private var bitmapPaint = Paint().apply {
         isFilterBitmap = true
     }
+    // view rect - padding (recalculated on size changed)
     private var canvasBounds = RectF()
+    // bitmap drawing rect (move on scroll, recalculated on scale changed)
     private var bitmapBounds = RectF()
-    private var maxBitmapBounds = RectF()
-    private var offset = PointF()
-    private var minScale = 1f
-    private var maxScale = 1f
+    // displaying bitmap rect (does not move, recalculated on scale changed)
+    private var viewport = RectF()
+    // minimum scale of bitmap
+    private var minBmScale = 1f
+    // maximum scale of bitmap
+    private var maxBmScale = 1f
+    // max zoom (1.0~imageMaxScale)
+    private var maxZoom = DEFAULT_MAX_ZOOM
+    // bitmap (decoded) width
     private var imageWidth = 0f
+    // bitmap (decoded) height
     private var imageHeight = 0f
+    // scaling helper
     private var scaleGestureDetector: ScaleGestureDetector? = null
-    private val onScaleGestureListenner: ScaleGestureDetector.OnScaleGestureListener = object : ScaleGestureDetector.OnScaleGestureListener{
+    private val onScaleGestureListener: ScaleGestureDetector.OnScaleGestureListener =
+        object : ScaleGestureDetector.OnScaleGestureListener {
 
-        override fun onScale(detector: ScaleGestureDetector?): Boolean {
-            Timber.e("onScale")
-            detector?.run {
-                scale = calcNewScale(scaleFactor)
-                // scale has changed, recalculate bitmap bounds
-                calcBounds()
-                // タッチした場所が中心になるようにしたほうが良さそう
-                constrainBitmapBounds()
-                invalidate()
+            override fun onScale(detector: ScaleGestureDetector?): Boolean {
+                Timber.e("onScale")
+                detector?.run {
+                    scale = calcNewScale(scaleFactor)
+                    // scale has changed, recalculate bitmap bounds
+                    calcBounds()
+                    // TODO should zoom into touch point
+                    offsetBitmap(0f, 0f)
+                    constrainBitmapBounds()
+                }
+                return true
             }
-            return true
+
+            override fun onScaleBegin(p0: ScaleGestureDetector?): Boolean = true
+
+            override fun onScaleEnd(p0: ScaleGestureDetector?) {}
         }
 
-        override fun onScaleBegin(p0: ScaleGestureDetector?): Boolean = true
+    // translating helper
+    private var gestureDetector: GestureDetector? = null
+    private val onGestureListener: GestureDetector.OnGestureListener =
+        object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent?): Boolean = true
 
-        override fun onScaleEnd(p0: ScaleGestureDetector?) {}
-    }
+            override fun onScroll(
+                e1: MotionEvent?,
+                e2: MotionEvent?,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                if (e2?.pointerCount != 1) {
+                    return true
+                }
+
+                if (scale > minBmScale) {
+                    offsetBitmap(-distanceX, -distanceY)
+                    constrainBitmapBounds()
+                } else {
+                    // TODO スワイプイベントを通知
+                }
+
+                return true
+            }
+
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent?,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+
+            override fun onDoubleTap(e: MotionEvent?): Boolean {
+                return super.onDoubleTap(e)
+            }
+
+
+        }
 
     init {
-        scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListenner)
+        scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
+        gestureDetector = GestureDetector(context, onGestureListener)
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
@@ -85,6 +147,7 @@ class LoupeImageView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas?) {
         Timber.e("onDraw: isReadyToDraw = $isReadyToDraw")
         if (isReadyToDraw) {
+            Timber.e("bitmapBounds = $bitmapBounds")
             val bm = getBitmap()
             if (bm != null) {
                 setTransform()
@@ -97,10 +160,9 @@ class LoupeImageView @JvmOverloads constructor(
         Timber.e("setMatrix: canvasBounds = $canvasBounds")
         Timber.e("setMatrix: bitmapBounds = $bitmapBounds")
         Timber.e("scale = $scale")
-        Timber.e("scaleX = $scaleX, scaleY = $scaleY")
         transfrom.apply {
             reset()
-            postTranslate(-imageWidth/2, -imageHeight/2)
+            postTranslate(-imageWidth / 2, -imageHeight / 2)
             postScale(scale, scale)
             postTranslate(bitmapBounds.centerX(), bitmapBounds.centerY())
         }
@@ -122,7 +184,7 @@ class LoupeImageView @JvmOverloads constructor(
     private fun setupLayout() {
         val bm = getBitmap()
         Timber.e("setupLayout start: width = $width, height = $height, bm = $bm")
-        if(width == 0 || height == 0 || bm == null) return
+        if (width == 0 || height == 0 || bm == null) return
         imageWidth = bm.width.toFloat()
         imageHeight = bm.height.toFloat()
         val canvasWidth = (width - paddingLeft - paddingRight).toFloat()
@@ -139,19 +201,30 @@ class LoupeImageView @JvmOverloads constructor(
      * constrain bitmap bounds inside max bitmap bounds
      */
     private fun constrainBitmapBounds() {
-        // ensure inside max bitmap bounds
-        if (bitmapBounds.left < maxBitmapBounds.left) {
-            bitmapBounds.offset(maxBitmapBounds.left - bitmapBounds.left, 0f)
+        Timber.e("constrainBitmapBounds start")
+        Timber.e("bitmapBounds = $bitmapBounds")
+        Timber.e("viewport = $viewport")
+
+        var offset = PointF()
+
+        // constrain viewport inside bitmap bounds
+        if (viewport.left < bitmapBounds.left) {
+            offset.x += viewport.left - bitmapBounds.left
         }
-        if (bitmapBounds.right > maxBitmapBounds.right) {
-            bitmapBounds.offset(maxBitmapBounds.right - bitmapBounds.right, 0f)
+
+        if (viewport.top < bitmapBounds.top) {
+            offset.y += viewport.top - bitmapBounds.top
         }
-        if (bitmapBounds.top < maxBitmapBounds.top) {
-            bitmapBounds.offset(0f, maxBitmapBounds.top - bitmapBounds.top)
+
+        if (viewport.right > bitmapBounds.right) {
+            offset.x += viewport.right - bitmapBounds.right
         }
-        if (bitmapBounds.bottom > maxBitmapBounds.bottom) {
-            bitmapBounds.offset(0f, maxBitmapBounds.bottom - bitmapBounds.bottom)
+
+        if (viewport.bottom > bitmapBounds.bottom) {
+            offset.y += viewport.bottom - bitmapBounds.bottom
         }
+
+        bitmapBounds.offset(offset.x, offset.y)
     }
 
     /**
@@ -159,41 +232,34 @@ class LoupeImageView @JvmOverloads constructor(
      */
     private fun calcBounds() {
         Timber.e("setupBoundsd start")
+        // calc canvas bounds
         canvasBounds = RectF(
             paddingLeft.toFloat(),
             paddingTop.toFloat(),
-            width -paddingRight.toFloat(),
-            height -paddingBottom.toFloat()
+            width - paddingRight.toFloat(),
+            height - paddingBottom.toFloat()
         )
+        // calc bitmap bounds
         bitmapBounds = RectF(
-            canvasBounds.centerX() - imageWidth * scale * 0.5f + offset.x,
-            canvasBounds.centerY() - imageHeight * scale * 0.5f + offset.y,
-            canvasBounds.centerX() + imageWidth * scale * 0.5f + offset.x,
-            canvasBounds.centerY() + imageHeight * scale * 0.5f + offset.y
+            canvasBounds.centerX() - imageWidth * scale * 0.5f,
+            canvasBounds.centerY() - imageHeight * scale * 0.5f,
+            canvasBounds.centerX() + imageWidth * scale * 0.5f,
+            canvasBounds.centerY() + imageHeight * scale * 0.5f
         )
-        // calc max bitmap bounds
-        maxBitmapBounds = RectF(bitmapBounds)
-        when {
-            bitmapBounds.width() <= canvasBounds.width() && bitmapBounds.height() > canvasBounds.height() -> {
-                val diffY = bitmapBounds.height() - canvasBounds.height()
-                maxBitmapBounds.top -= diffY * 0.5f
-                maxBitmapBounds.bottom += diffY * 0.5f
-            }
-            bitmapBounds.height() <= canvasBounds.height() && bitmapBounds.width() > canvasBounds.width() -> {
-                val diffX = bitmapBounds.width() - canvasBounds.width()
-                maxBitmapBounds.left -= diffX * 0.5f
-                maxBitmapBounds.right += diffX * 0.5f
-            }
-            bitmapBounds.width() > canvasBounds.width() && bitmapBounds.height() > canvasBounds.height() -> {
-                val diffX = bitmapBounds.width() - canvasBounds.width()
-                maxBitmapBounds.left -= diffX * 0.5f
-                maxBitmapBounds.right += diffX * 0.5f
-                val diffY = bitmapBounds.height() - canvasBounds.height()
-                maxBitmapBounds.top -= diffY * 0.5f
-                maxBitmapBounds.bottom += diffY * 0.5f
-            }
-        }
-        Timber.e("setupBounds: canvasBounds = $canvasBounds, bitmapBounds = $bitmapBounds, maxBitmapBounds = $maxBitmapBounds")
+        // calc viewport
+        viewport = RectF(
+            max(canvasBounds.left, bitmapBounds.left),
+            max(canvasBounds.top, bitmapBounds.top),
+            min(canvasBounds.right, bitmapBounds.right),
+            min(canvasBounds.bottom, bitmapBounds.bottom)
+        )
+        Timber.e("setupBounds: canvasBounds = $canvasBounds, bitmapBounds = $bitmapBounds, maxBitmapBounds = $viewport")
+    }
+
+    private fun offsetBitmap(offsetX: Float, offsetY: Float) {
+        bitmapBounds.offset(offsetX, offsetY)
+        Timber.e("offsetX = $offsetX, offsetY = $offsetY")
+        Timber.e("offsetBitmap: bitmapBounds = $bitmapBounds")
     }
 
     /**
@@ -208,31 +274,34 @@ class LoupeImageView @JvmOverloads constructor(
         Timber.e("setupScale start")
         val canvasRatio = canvasHeight / canvasWidth
         val bitmapRatio = bitmapHeight / bitmapWidth
-        minScale = if (canvasRatio > bitmapRatio) {
+        minBmScale = if (canvasRatio > bitmapRatio) {
             canvasWidth / bitmapWidth
         } else {
             canvasHeight / bitmapHeight
         }
-        scale = minScale
-        maxScale = minScale * 2f
+        scale = minBmScale
+        maxBmScale = minBmScale * maxZoom
         Timber.e("setupScale: canvasWidth = $canvasWidth, bitmapWidth = $bitmapWidth, canvasHeight = $canvasHeight, bitmapHeight = $bitmapHeight")
-        Timber.e("setupScale: canvasRatio = $canvasRatio, bitmapRatio = $bitmapRatio, minScale = $minScale")
+        Timber.e("setupScale: canvasRatio = $canvasRatio, bitmapRatio = $bitmapRatio, minScale = $minBmScale")
     }
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
         val result = super.dispatchTouchEvent(event)
 
-        if(!isEnabled){
+        if (!isEnabled) {
             return result
         }
 
         scaleGestureDetector?.onTouchEvent(event)
+        gestureDetector?.onTouchEvent(event)
+
+        invalidate()
 
         return true
     }
 
     private fun calcNewScale(newScale: Float): Float {
-        return constrain(minScale, newScale * scale, maxScale)
+        return constrain(minBmScale, newScale * scale, maxBmScale)
     }
 
     private fun constrain(min: Float, value: Float, max: Float): Float {
