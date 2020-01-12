@@ -1,5 +1,6 @@
 package com.igreenwood.loupe
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
@@ -57,19 +58,17 @@ class LoupeImageView @JvmOverloads constructor(
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
                 Timber.e("onScale")
-                detector?.run {
-                    if (scaleFactor == 1.0f) {
-                        // scale is not changing
-                        return true
-                    }
-                    val oldBounds = RectF(bitmapBounds)
-                    scale = calcNewScale(scaleFactor)
-                    // scale has changed, recalculate bitmap bounds
-                    calcBounds()
-                    // offset to focusPoint
-                    offsetToScaleFocusPoint(focusX, focusY, oldBounds, bitmapBounds)
-                    constrainBitmapBounds()
+                val scaleFactor = detector?.scaleFactor ?: 1.0f
+                val focusX = detector?.focusX ?: bitmapBounds.centerX()
+                val focusY = detector?.focusY ?: bitmapBounds.centerY()
+
+                if (detector?.scaleFactor == 1.0f) {
+                    // scale is not changing
+                    return true
                 }
+
+                scale = calcNewScale(scaleFactor)
+                zoomTo(focusX, focusY)
                 return true
             }
 
@@ -77,6 +76,15 @@ class LoupeImageView @JvmOverloads constructor(
 
             override fun onScaleEnd(p0: ScaleGestureDetector?) {}
         }
+
+    private fun zoomTo(focusX: Float, focusY: Float) {
+        val oldBounds = RectF(bitmapBounds)
+        // scale has changed, recalculate bitmap bounds
+        calcBounds()
+        // offset to focusPoint
+        offsetToScaleFocusPoint(focusX, focusY, oldBounds, bitmapBounds)
+        constrainBitmapBounds()
+    }
 
     // translating helper
     private var gestureDetector: GestureDetector? = null
@@ -98,7 +106,7 @@ class LoupeImageView @JvmOverloads constructor(
                     offsetBitmap(-distanceX, -distanceY)
                     constrainBitmapBounds()
                 } else {
-                    // TODO スワイプイベントを通知
+                    // TODO dismiss process
                 }
 
                 return true
@@ -114,7 +122,28 @@ class LoupeImageView @JvmOverloads constructor(
             }
 
             override fun onDoubleTap(e: MotionEvent?): Boolean {
-                return super.onDoubleTap(e)
+                e ?: return false
+                var focusX = e.x
+                var focusY = e.y
+                var targetScale: Float
+
+                if(scale > minBmScale){
+                    targetScale = minBmScale
+                    focusX = canvasBounds.centerX()
+                    focusY = canvasBounds.centerY()
+                } else {
+                    targetScale = minBmScale * maxZoom * 0.5f
+                }
+
+                ValueAnimator.ofFloat(scale, targetScale).apply {
+                    duration = 500
+                    addUpdateListener {
+                        scale = it.animatedValue as Float
+                        zoomTo(focusX, focusY)
+                        postInvalidateOnAnimation()
+                    }
+                }.start()
+                return true
             }
 
 
