@@ -20,7 +20,7 @@ class LoupeImageView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : ImageView(context, attrs, defStyleAttr) {
 
-    companion object{
+    companion object {
         const val DEFAULT_MAX_ZOOM = 4.0f
     }
 
@@ -58,11 +58,16 @@ class LoupeImageView @JvmOverloads constructor(
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
                 Timber.e("onScale")
                 detector?.run {
+                    if (scaleFactor == 1.0f) {
+                        // scale is not changing
+                        return true
+                    }
+                    val oldBounds = RectF(bitmapBounds)
                     scale = calcNewScale(scaleFactor)
                     // scale has changed, recalculate bitmap bounds
                     calcBounds()
-                    // TODO should zoom into touch point
-                    offsetBitmap(0f, 0f)
+                    // offset to focusPoint
+                    offsetToScaleFocusPoint(focusX, focusY, oldBounds, bitmapBounds)
                     constrainBitmapBounds()
                 }
                 return true
@@ -127,7 +132,7 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     override fun setImageResource(resId: Int) {
-        Timber.e("setImageResource")
+//        Timber.e("setImageResource")
         isReadyToDraw = false
         super.setImageResource(resId)
         updateLayout()
@@ -140,14 +145,12 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun updateLayout() {
-        Timber.e("updateLayout")
+//        Timber.e("updateLayout")
         setupLayout()
     }
 
     override fun onDraw(canvas: Canvas?) {
-        Timber.e("onDraw: isReadyToDraw = $isReadyToDraw")
         if (isReadyToDraw) {
-            Timber.e("bitmapBounds = $bitmapBounds")
             val bm = getBitmap()
             if (bm != null) {
                 setTransform()
@@ -157,9 +160,6 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun setTransform() {
-        Timber.e("setMatrix: canvasBounds = $canvasBounds")
-        Timber.e("setMatrix: bitmapBounds = $bitmapBounds")
-        Timber.e("scale = $scale")
         transfrom.apply {
             reset()
             postTranslate(-imageWidth / 2, -imageHeight / 2)
@@ -174,7 +174,7 @@ class LoupeImageView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        Timber.e("onSizeChanged")
+//        Timber.e("onSizeChanged")
         setupLayout()
     }
 
@@ -183,7 +183,7 @@ class LoupeImageView @JvmOverloads constructor(
      */
     private fun setupLayout() {
         val bm = getBitmap()
-        Timber.e("setupLayout start: width = $width, height = $height, bm = $bm")
+//        Timber.e("setupLayout start: width = $width, height = $height, bm = $bm")
         if (width == 0 || height == 0 || bm == null) return
         imageWidth = bm.width.toFloat()
         imageHeight = bm.height.toFloat()
@@ -201,11 +201,7 @@ class LoupeImageView @JvmOverloads constructor(
      * constrain bitmap bounds inside max bitmap bounds
      */
     private fun constrainBitmapBounds() {
-        Timber.e("constrainBitmapBounds start")
-        Timber.e("bitmapBounds = $bitmapBounds")
-        Timber.e("viewport = $viewport")
-
-        var offset = PointF()
+        val offset = PointF()
 
         // constrain viewport inside bitmap bounds
         if (viewport.left < bitmapBounds.left) {
@@ -231,7 +227,6 @@ class LoupeImageView @JvmOverloads constructor(
      * calc canvas/bitmap bounds
      */
     private fun calcBounds() {
-        Timber.e("setupBoundsd start")
         // calc canvas bounds
         canvasBounds = RectF(
             paddingLeft.toFloat(),
@@ -253,13 +248,12 @@ class LoupeImageView @JvmOverloads constructor(
             min(canvasBounds.right, bitmapBounds.right),
             min(canvasBounds.bottom, bitmapBounds.bottom)
         )
-        Timber.e("setupBounds: canvasBounds = $canvasBounds, bitmapBounds = $bitmapBounds, maxBitmapBounds = $viewport")
     }
 
     private fun offsetBitmap(offsetX: Float, offsetY: Float) {
         bitmapBounds.offset(offsetX, offsetY)
-        Timber.e("offsetX = $offsetX, offsetY = $offsetY")
-        Timber.e("offsetBitmap: bitmapBounds = $bitmapBounds")
+//        Timber.e("offsetX = $offsetX, offsetY = $offsetY")
+//        Timber.e("offsetBitmap: bitmapBounds = $bitmapBounds")
     }
 
     /**
@@ -271,7 +265,6 @@ class LoupeImageView @JvmOverloads constructor(
         bitmapWidth: Float,
         bitmapHeight: Float
     ) {
-        Timber.e("setupScale start")
         val canvasRatio = canvasHeight / canvasWidth
         val bitmapRatio = bitmapHeight / bitmapWidth
         minBmScale = if (canvasRatio > bitmapRatio) {
@@ -281,8 +274,6 @@ class LoupeImageView @JvmOverloads constructor(
         }
         scale = minBmScale
         maxBmScale = minBmScale * maxZoom
-        Timber.e("setupScale: canvasWidth = $canvasWidth, bitmapWidth = $bitmapWidth, canvasHeight = $canvasHeight, bitmapHeight = $bitmapHeight")
-        Timber.e("setupScale: canvasRatio = $canvasRatio, bitmapRatio = $bitmapRatio, minScale = $minBmScale")
     }
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
@@ -306,5 +297,28 @@ class LoupeImageView @JvmOverloads constructor(
 
     private fun constrain(min: Float, value: Float, max: Float): Float {
         return max(min(value, max), min)
+    }
+
+    private fun offsetToScaleFocusPoint(
+        focusX: Float,
+        focusY: Float,
+        oldBounds: RectF,
+        newBounds: RectF
+    ) {
+        val oldX = constrain(viewport.left, focusX, viewport.right)
+        val oldY = constrain(viewport.top, focusY, viewport.bottom)
+        val newX = map(oldX, oldBounds.left, oldBounds.right, newBounds.left, newBounds.right)
+        val newY = map(oldY, oldBounds.top, oldBounds.bottom, newBounds.top, newBounds.bottom)
+        offsetBitmap(oldX - newX, oldY - newY)
+    }
+
+    private fun map(
+        value: Float,
+        srcStart: Float,
+        srcStop: Float,
+        dstStart: Float,
+        dstStop: Float
+    ): Float {
+        return ((value - srcStart) * (dstStop - dstStart) / (srcStop - srcStart)) + dstStart
     }
 }
