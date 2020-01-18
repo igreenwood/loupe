@@ -312,11 +312,14 @@ class LoupeImageView @JvmOverloads constructor(
             return result
         }
 
-        scaleGestureDetector?.onTouchEvent(event)
-        gestureDetector?.onTouchEvent(event)
+        val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
+        if(scaleEvent == scaleGestureDetector?.isInProgress){
+            // no op
+        } else {
+            gestureDetector?.onTouchEvent(event)
+        }
 
         invalidate()
-
         return true
     }
 
