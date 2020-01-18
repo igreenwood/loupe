@@ -77,12 +77,12 @@ class LoupeImageView @JvmOverloads constructor(
             override fun onScaleEnd(p0: ScaleGestureDetector?) {}
         }
 
-    private fun zoomTo(focusX: Float, focusY: Float) {
+    private fun zoomTo(focalX: Float, focalY: Float) {
         val oldBounds = RectF(bitmapBounds)
         // scale has changed, recalculate bitmap bounds
         calcBounds()
-        // offset to focusPoint
-        offsetToScaleFocusPoint(focusX, focusY, oldBounds, bitmapBounds)
+        // offset to focalPoint
+        offsetToZoomFocalPoint(focalX, focalY, oldBounds, bitmapBounds)
         constrainBitmapBounds()
     }
 
@@ -123,14 +123,14 @@ class LoupeImageView @JvmOverloads constructor(
 
             override fun onDoubleTap(e: MotionEvent?): Boolean {
                 e ?: return false
-                var focusX = e.x
-                var focusY = e.y
+                var zoomFocalPointX = e.x
+                var zoomFocalPointY = e.y
                 var targetScale: Float
 
                 if(scale > minBmScale){
                     targetScale = minBmScale
-                    focusX = canvasBounds.centerX()
-                    focusY = canvasBounds.centerY()
+                    zoomFocalPointX = canvasBounds.centerX()
+                    zoomFocalPointY = canvasBounds.centerY()
                 } else {
                     targetScale = minBmScale * maxZoom * 0.5f
                 }
@@ -139,7 +139,7 @@ class LoupeImageView @JvmOverloads constructor(
                     duration = 500
                     addUpdateListener {
                         scale = it.animatedValue as Float
-                        zoomTo(focusX, focusY)
+                        zoomTo(zoomFocalPointX, zoomFocalPointY)
                         postInvalidateOnAnimation()
                     }
                 }.start()
@@ -331,14 +331,14 @@ class LoupeImageView @JvmOverloads constructor(
         return max(min(value, max), min)
     }
 
-    private fun offsetToScaleFocusPoint(
-        focusX: Float,
-        focusY: Float,
+    private fun offsetToZoomFocalPoint(
+        focalX: Float,
+        focalY: Float,
         oldBounds: RectF,
         newBounds: RectF
     ) {
-        val oldX = constrain(viewport.left, focusX, viewport.right)
-        val oldY = constrain(viewport.top, focusY, viewport.bottom)
+        val oldX = constrain(viewport.left, focalX, viewport.right)
+        val oldY = constrain(viewport.top, focalY, viewport.bottom)
         val newX = map(oldX, oldBounds.left, oldBounds.right, newBounds.left, newBounds.right)
         val newY = map(oldY, oldBounds.top, oldBounds.bottom, newBounds.top, newBounds.bottom)
         offsetBitmap(oldX - newX, oldY - newY)
