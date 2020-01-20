@@ -10,10 +10,14 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
+import android.widget.OverScroller
+import androidx.core.view.ViewCompat
 import timber.log.Timber
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class LoupeImageView @JvmOverloads constructor(
     context: Context,
@@ -22,7 +26,8 @@ class LoupeImageView @JvmOverloads constructor(
 ) : ImageView(context, attrs, defStyleAttr) {
 
     companion object {
-        const val DEFAULT_MAX_ZOOM = 4.0f
+        const val DEFAULT_MAX_ZOOM = 10.0f
+        const val ANIM_DURATION = 250L
     }
 
     // bitmap matrix
@@ -98,6 +103,7 @@ class LoupeImageView @JvmOverloads constructor(
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
+                Timber.e("onScroll start")
                 if (e2?.pointerCount != 1) {
                     return true
                 }
@@ -109,6 +115,7 @@ class LoupeImageView @JvmOverloads constructor(
                     // TODO dismiss process
                 }
 
+                Timber.e("onScroll end")
                 return true
             }
 
@@ -118,7 +125,55 @@ class LoupeImageView @JvmOverloads constructor(
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                return super.onFling(e1, e2, velocityX, velocityY)
+                e1 ?: return true
+
+                Timber.e("onFling: velocity = ($velocityX, $velocityY}) ======================================")
+
+                Timber.e("viewport = $viewport")
+                Timber.e("bitmapBounds = $bitmapBounds")
+
+                val (velX, velY) = velocityX to velocityY
+
+                Timber.e("vel = ($velX, $velY)")
+
+                if (velX == 0f && velY == 0f) {
+                    return true
+                }
+
+                val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
+
+                scroller.forceFinished(true)
+                scroller.fling(
+                    fromX.roundToInt(),
+                    fromY.roundToInt(),
+                    velX.roundToInt(),
+                    velY.roundToInt(),
+                    (viewport.right - bitmapBounds.width()).roundToInt(),
+                    viewport.left.roundToInt(),
+                    (viewport.bottom - bitmapBounds.height()).roundToInt(),
+                    viewport.top.roundToInt()
+                )
+
+                ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+
+                val toX = scroller.finalX.toFloat()
+                val toY = scroller.finalY.toFloat()
+
+                ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = ANIM_DURATION
+                    interpolator = DecelerateInterpolator()
+                    addUpdateListener {
+                        val progress = it.animatedValue as Float
+                        val newLeft = lerp(progress, fromX, toX)
+                        val newTop = lerp(progress, fromY, toY)
+                        bitmapBounds.offsetTo(newLeft, newTop)
+                        if (progress == 1.0f) {
+                            constrainBitmapBounds()
+                        }
+                        ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+                    }
+                }.start()
+                return true
             }
 
             override fun onDoubleTap(e: MotionEvent?): Boolean {
@@ -127,7 +182,7 @@ class LoupeImageView @JvmOverloads constructor(
                 var zoomFocalPointY = e.y
                 var targetScale: Float
 
-                if(scale > minBmScale){
+                if (scale > minBmScale) {
                     targetScale = minBmScale
                     zoomFocalPointX = canvasBounds.centerX()
                     zoomFocalPointY = canvasBounds.centerY()
@@ -136,11 +191,12 @@ class LoupeImageView @JvmOverloads constructor(
                 }
 
                 ValueAnimator.ofFloat(scale, targetScale).apply {
-                    duration = 500
+                    duration = ANIM_DURATION
+                    interpolator = DecelerateInterpolator()
                     addUpdateListener {
                         scale = it.animatedValue as Float
                         zoomTo(zoomFocalPointX, zoomFocalPointY)
-                        postInvalidateOnAnimation()
+                        ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
                     }
                 }.start()
                 return true
@@ -149,9 +205,14 @@ class LoupeImageView @JvmOverloads constructor(
 
         }
 
+    private val scroller: OverScroller
+    private val maxFlingVelocity: Int
+
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
         gestureDetector = GestureDetector(context, onGestureListener)
+        scroller = OverScroller(context)
+        maxFlingVelocity = 10
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
@@ -281,8 +342,6 @@ class LoupeImageView @JvmOverloads constructor(
 
     private fun offsetBitmap(offsetX: Float, offsetY: Float) {
         bitmapBounds.offset(offsetX, offsetY)
-//        Timber.e("offsetX = $offsetX, offsetY = $offsetY")
-//        Timber.e("offsetBitmap: bitmapBounds = $bitmapBounds")
     }
 
     /**
@@ -313,7 +372,7 @@ class LoupeImageView @JvmOverloads constructor(
         }
 
         val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
-        if(scaleEvent == scaleGestureDetector?.isInProgress){
+        if (scaleEvent == scaleGestureDetector?.isInProgress) {
             // no op
         } else {
             gestureDetector?.onTouchEvent(event)
@@ -351,6 +410,13 @@ class LoupeImageView @JvmOverloads constructor(
         dstStart: Float,
         dstStop: Float
     ): Float {
+        if (srcStop - srcStart == 0f) {
+            return 0f
+        }
         return ((value - srcStart) * (dstStop - dstStart) / (srcStop - srcStart)) + dstStart
+    }
+
+    private fun lerp(amt: Float, start: Float, stop: Float): Float {
+        return start + (stop - start) * amt
     }
 }
