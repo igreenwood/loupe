@@ -62,7 +62,6 @@ class LoupeImageView @JvmOverloads constructor(
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                Timber.e("onScale")
                 val scaleFactor = detector?.scaleFactor ?: 1.0f
                 val focusX = detector?.focusX ?: bitmapBounds.centerX()
                 val focusY = detector?.focusY ?: bitmapBounds.centerY()
@@ -73,7 +72,23 @@ class LoupeImageView @JvmOverloads constructor(
                 }
 
                 scale = calcNewScale(scaleFactor)
-                zoomTo(focusX, focusY)
+
+                if(scale > minBmScale){
+                    zoomTo(focusX, focusY)
+                } else {
+                    val startScale = scale
+                    ValueAnimator.ofFloat(startScale, minBmScale).apply {
+                        duration = ANIM_DURATION
+                        interpolator = DecelerateInterpolator()
+                        addUpdateListener {
+                            val newScale = it.animatedValue as Float
+                            scale = newScale
+                            zoomTo(viewport.centerX(), viewport.centerY())
+                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+                        }
+                    }.start()
+                }
+
                 return true
             }
 
@@ -383,7 +398,7 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun calcNewScale(newScale: Float): Float {
-        return constrain(minBmScale, newScale * scale, maxBmScale)
+        return min(maxBmScale, newScale * scale)
     }
 
     private fun constrain(min: Float, value: Float, max: Float): Float {
