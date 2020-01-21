@@ -73,7 +73,7 @@ class LoupeImageView @JvmOverloads constructor(
 
                 scale = calcNewScale(scaleFactor)
 
-                if(scale > minBmScale){
+                if (scale >= minBmScale) {
                     zoomTo(focusX, focusY)
                 } else {
                     val startScale = scale
@@ -118,7 +118,7 @@ class LoupeImageView @JvmOverloads constructor(
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-                Timber.e("onScroll start")
+
                 if (e2?.pointerCount != 1) {
                     return true
                 }
@@ -387,9 +387,9 @@ class LoupeImageView @JvmOverloads constructor(
         }
 
         val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
-        if (scaleEvent == scaleGestureDetector?.isInProgress) {
-            // no op
-        } else {
+        val isScaleAnimationIsRunning = scale < minBmScale
+        if (scaleEvent != scaleGestureDetector?.isInProgress && !isScaleAnimationIsRunning) {
+            // handle single touch gesture when scaling process is not running
             gestureDetector?.onTouchEvent(event)
         }
 
