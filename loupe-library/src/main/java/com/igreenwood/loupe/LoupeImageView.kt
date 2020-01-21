@@ -1,5 +1,6 @@
 package com.igreenwood.loupe
 
+import android.animation.Animator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.*
@@ -10,11 +11,13 @@ import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
 import timber.log.Timber
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -28,6 +31,11 @@ class LoupeImageView @JvmOverloads constructor(
     companion object {
         const val DEFAULT_MAX_ZOOM = 10.0f
         const val ANIM_DURATION = 250L
+        const val DEFAULT_DISMISS_THRESHOLD_RATIO = 0.15f
+    }
+
+    interface OnDismissListener {
+        fun onDismiss(view: LoupeImageView)
     }
 
     // bitmap matrix
@@ -97,15 +105,6 @@ class LoupeImageView @JvmOverloads constructor(
             override fun onScaleEnd(p0: ScaleGestureDetector?) {}
         }
 
-    private fun zoomTo(focalX: Float, focalY: Float) {
-        val oldBounds = RectF(bitmapBounds)
-        // scale has changed, recalculate bitmap bounds
-        calcBounds()
-        // offset to focalPoint
-        offsetToZoomFocalPoint(focalX, focalY, oldBounds, bitmapBounds)
-        constrainBitmapBounds()
-    }
-
     // translating helper
     private var gestureDetector: GestureDetector? = null
     private val onGestureListener: GestureDetector.OnGestureListener =
@@ -126,11 +125,9 @@ class LoupeImageView @JvmOverloads constructor(
                 if (scale > minBmScale) {
                     offsetBitmap(-distanceX, -distanceY)
                     constrainBitmapBounds()
-                } else {
-                    // TODO dismiss process
+                } else if (scale == minBmScale) {
+                    applyDismissEffect(distanceY)
                 }
-
-                Timber.e("onScroll end")
                 return true
             }
 
@@ -147,47 +144,49 @@ class LoupeImageView @JvmOverloads constructor(
                 Timber.e("viewport = $viewport")
                 Timber.e("bitmapBounds = $bitmapBounds")
 
-                val (velX, velY) = velocityX to velocityY
+                if (scale > minBmScale) {
+                    val (velX, velY) = velocityX to velocityY
 
-                Timber.e("vel = ($velX, $velY)")
+                    Timber.e("vel = ($velX, $velY)")
 
-                if (velX == 0f && velY == 0f) {
-                    return true
-                }
-
-                val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
-
-                scroller.forceFinished(true)
-                scroller.fling(
-                    fromX.roundToInt(),
-                    fromY.roundToInt(),
-                    velX.roundToInt(),
-                    velY.roundToInt(),
-                    (viewport.right - bitmapBounds.width()).roundToInt(),
-                    viewport.left.roundToInt(),
-                    (viewport.bottom - bitmapBounds.height()).roundToInt(),
-                    viewport.top.roundToInt()
-                )
-
-                ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-
-                val toX = scroller.finalX.toFloat()
-                val toY = scroller.finalY.toFloat()
-
-                ValueAnimator.ofFloat(0f, 1f).apply {
-                    duration = ANIM_DURATION
-                    interpolator = DecelerateInterpolator()
-                    addUpdateListener {
-                        val progress = it.animatedValue as Float
-                        val newLeft = lerp(progress, fromX, toX)
-                        val newTop = lerp(progress, fromY, toY)
-                        bitmapBounds.offsetTo(newLeft, newTop)
-                        if (progress == 1.0f) {
-                            constrainBitmapBounds()
-                        }
-                        ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+                    if (velX == 0f && velY == 0f) {
+                        return true
                     }
-                }.start()
+
+                    val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
+
+                    scroller.forceFinished(true)
+                    scroller.fling(
+                        fromX.roundToInt(),
+                        fromY.roundToInt(),
+                        velX.roundToInt(),
+                        velY.roundToInt(),
+                        (viewport.right - bitmapBounds.width()).roundToInt(),
+                        viewport.left.roundToInt(),
+                        (viewport.bottom - bitmapBounds.height()).roundToInt(),
+                        viewport.top.roundToInt()
+                    )
+
+                    ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+
+                    val toX = scroller.finalX.toFloat()
+                    val toY = scroller.finalY.toFloat()
+
+                    ValueAnimator.ofFloat(0f, 1f).apply {
+                        duration = ANIM_DURATION
+                        interpolator = DecelerateInterpolator()
+                        addUpdateListener {
+                            val progress = it.animatedValue as Float
+                            val newLeft = lerp(progress, fromX, toX)
+                            val newTop = lerp(progress, fromY, toY)
+                            bitmapBounds.offsetTo(newLeft, newTop)
+                            if (progress == 1.0f) {
+                                constrainBitmapBounds()
+                            }
+                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+                        }
+                    }.start()
+                }
                 return true
             }
 
@@ -195,7 +194,7 @@ class LoupeImageView @JvmOverloads constructor(
                 e ?: return false
                 var zoomFocalPointX = e.x
                 var zoomFocalPointY = e.y
-                var targetScale: Float
+                val targetScale: Float
 
                 if (scale > minBmScale) {
                     targetScale = minBmScale
@@ -220,14 +219,89 @@ class LoupeImageView @JvmOverloads constructor(
 
         }
 
+    private fun applyDismissEffect(distanceY: Float) {
+        val view = this
+        view.y = view.y - distanceY * 0.7f
+        view.alpha = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.6f)
+        val scale = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.95f)
+        view.scaleX = scale
+        view.scaleY = scale
+    }
+
+    private fun dismissOrRestoreIfNeeded() {
+        if(y == 0f){
+            return
+        }
+        dismissOrRestore()
+    }
+
+    private fun dismissOrRestore() {
+        val view = this
+
+        if (abs(y) > dismissThreshold) {
+            Timber.e("over threshold")
+            val translationY = if (y > 0) {
+                originalViewBounds.top + view.height - view.top
+            } else {
+                originalViewBounds.top - view.height - view.top
+            }
+            isDismissing = true
+            animate()
+                .setDuration(ANIM_DURATION)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .alpha(0f)
+                .translationY(translationY.toFloat())
+                .setListener(object : Animator.AnimatorListener {
+                    override fun onAnimationRepeat(p0: Animator?) {
+                        // no op
+                    }
+
+                    override fun onAnimationEnd(p0: Animator?) {
+                        isDismissing = false
+                        onDismissListener?.onDismiss(this@LoupeImageView)
+                    }
+
+                    override fun onAnimationCancel(p0: Animator?) {
+                        // no op
+                    }
+
+                    override fun onAnimationStart(p0: Animator?) {
+                        // no op
+                    }
+                })
+        } else {
+            Timber.e("within threshold")
+            animate()
+                .setDuration(ANIM_DURATION)
+                .setInterpolator(AccelerateDecelerateInterpolator())
+                .scaleX(1f)
+                .scaleY(1f)
+                .alpha(1f)
+                .translationY((originalViewBounds.top - view.top).toFloat())
+        }
+    }
+
     private val scroller: OverScroller
-    private val maxFlingVelocity: Int
+    private var originalViewBounds = Rect()
+
+    private var dismissThreshold = 0f
+
+    var onDismissListener: OnDismissListener? = null
+    var isDismissing = false
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
         gestureDetector = GestureDetector(context, onGestureListener)
         scroller = OverScroller(context)
-        maxFlingVelocity = 10
+    }
+
+    private fun zoomTo(focalX: Float, focalY: Float) {
+        val oldBounds = RectF(bitmapBounds)
+        // scale has changed, recalculate bitmap bounds
+        calcBounds()
+        // offset to focalPoint
+        offsetToZoomFocalPoint(focalX, focalY, oldBounds, bitmapBounds)
+        constrainBitmapBounds()
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
@@ -280,6 +354,9 @@ class LoupeImageView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 //        Timber.e("onSizeChanged")
+        originalViewBounds.set(left, top, right, bottom)
+        dismissThreshold = originalViewBounds.height() * DEFAULT_DISMISS_THRESHOLD_RATIO
+
         setupLayout()
     }
 
@@ -386,11 +463,19 @@ class LoupeImageView @JvmOverloads constructor(
             return result
         }
 
+        if(isDismissing) {
+            return true
+        }
+
         val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
         val isScaleAnimationIsRunning = scale < minBmScale
         if (scaleEvent != scaleGestureDetector?.isInProgress && !isScaleAnimationIsRunning) {
             // handle single touch gesture when scaling process is not running
             gestureDetector?.onTouchEvent(event)
+        }
+
+        if(event?.action == MotionEvent.ACTION_UP){
+            dismissOrRestoreIfNeeded()
         }
 
         invalidate()
@@ -433,5 +518,9 @@ class LoupeImageView @JvmOverloads constructor(
 
     private fun lerp(amt: Float, start: Float, stop: Float): Float {
         return start + (stop - start) * amt
+    }
+
+    private fun norm(value: Float, start: Float, stop: Float): Float {
+        return value / (stop - start)
     }
 }

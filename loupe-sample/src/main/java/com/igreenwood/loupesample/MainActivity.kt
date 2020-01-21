@@ -13,6 +13,11 @@ class MainActivity : AppCompatActivity() {
 
         val imageView = findViewById<LoupeImageView>(R.id.image)
         imageView.setImageResource(R.drawable.sample4)
+        imageView.onDismissListener = object : LoupeImageView.OnDismissListener {
+            override fun onDismiss(view: LoupeImageView) {
+                finish()
+            }
+        }
 
 //        Glide.with(this).load("https://raw.githubusercontent.com/igreenwood/SimpleCropView/master/simplecropview-sample/src/main/res/drawable/sample4.png").into(imageView)
     }
