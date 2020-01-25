@@ -2,7 +2,6 @@ package com.igreenwood.loupesample
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.bumptech.glide.Glide
 import com.igreenwood.loupe.LoupeImageView
 
 class MainActivity : AppCompatActivity() {
@@ -13,7 +12,7 @@ class MainActivity : AppCompatActivity() {
 
         val imageView = findViewById<LoupeImageView>(R.id.image)
         imageView.setImageResource(R.drawable.sample4)
-        imageView.onDismissListener = object : LoupeImageView.OnDismissListener {
+        imageView.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
             override fun onDismiss(view: LoupeImageView) {
                 finish()
             }

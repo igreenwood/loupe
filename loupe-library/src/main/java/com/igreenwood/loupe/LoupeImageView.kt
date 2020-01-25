@@ -32,9 +32,12 @@ class LoupeImageView @JvmOverloads constructor(
         const val DEFAULT_MAX_ZOOM = 10.0f
         const val ANIM_DURATION = 250L
         const val DEFAULT_DISMISS_THRESHOLD_RATIO = 0.15f
+        const val DEFAULT_VIEW_DRAG_RATIO = 0.7f
     }
 
-    interface OnDismissListener {
+    interface OnViewTranslateListener {
+        fun onViewTranslate(view: LoupeImageView, progress: Float)
+        fun onRestore(view: LoupeImageView)
         fun onDismiss(view: LoupeImageView)
     }
 
@@ -126,7 +129,7 @@ class LoupeImageView @JvmOverloads constructor(
                     offsetBitmap(-distanceX, -distanceY)
                     constrainBitmapBounds()
                 } else if (scale == minBmScale) {
-                    applyDismissEffect(distanceY)
+                    doDrag(distanceY)
                 }
                 return true
             }
@@ -219,13 +222,14 @@ class LoupeImageView @JvmOverloads constructor(
 
         }
 
-    private fun applyDismissEffect(distanceY: Float) {
+    private fun doDrag(distanceY: Float) {
         val view = this
-        view.y = view.y - distanceY * 0.7f
+        view.y = view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
         view.alpha = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.6f)
         val scale = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.95f)
         view.scaleX = scale
         view.scaleY = scale
+        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, dismissThreshold))
     }
 
     private fun dismissOrRestoreIfNeeded() {
@@ -245,15 +249,14 @@ class LoupeImageView @JvmOverloads constructor(
             } else {
                 originalViewBounds.top - view.height - view.top
             }
-            isDismissing = true
             animate()
                 .setDuration(ANIM_DURATION)
                 .setInterpolator(AccelerateDecelerateInterpolator())
                 .alpha(0f)
                 .translationY(translationY.toFloat())
                 .setListener(object : Animator.AnimatorListener {
-                    override fun onAnimationRepeat(p0: Animator?) {
-                        // no op
+                    override fun onAnimationStart(p0: Animator?) {
+                        isDismissing = true
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
@@ -265,7 +268,7 @@ class LoupeImageView @JvmOverloads constructor(
                         // no op
                     }
 
-                    override fun onAnimationStart(p0: Animator?) {
+                    override fun onAnimationRepeat(p0: Animator?) {
                         // no op
                     }
                 })
@@ -278,6 +281,23 @@ class LoupeImageView @JvmOverloads constructor(
                 .scaleY(1f)
                 .alpha(1f)
                 .translationY((originalViewBounds.top - view.top).toFloat())
+                .setListener(object  : Animator.AnimatorListener {
+                    override fun onAnimationStart(p0: Animator?) {
+                        // no op
+                    }
+
+                    override fun onAnimationEnd(p0: Animator?) {
+                        onDismissListener?.onRestore(this@LoupeImageView)
+                    }
+
+                    override fun onAnimationCancel(p0: Animator?) {
+                        // no op
+                    }
+
+                    override fun onAnimationRepeat(p0: Animator?) {
+                        // no op
+                    }
+                })
         }
     }
 
@@ -286,8 +306,9 @@ class LoupeImageView @JvmOverloads constructor(
 
     private var dismissThreshold = 0f
 
-    var onDismissListener: OnDismissListener? = null
+    var onDismissListener: OnViewTranslateListener? = null
     var isDismissing = false
+    private var viewDragRatio = DEFAULT_VIEW_DRAG_RATIO
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
