@@ -246,6 +246,27 @@ class LoupeImageView @JvmOverloads constructor(
                         zoomTo(zoomFocalPointX, zoomFocalPointY)
                         ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
                     }
+                    addListener(object : Animator.AnimatorListener {
+                        override fun onAnimationStart(p0: Animator?) {
+                            Timber.e("flinging true >>>>>>")
+                            isAnimating = true
+                        }
+
+                        override fun onAnimationEnd(p0: Animator?) {
+                            Timber.e("<<<<<<<<<< flinging false ")
+                            isAnimating = false
+                            constrainBitmapBounds()
+                        }
+
+                        override fun onAnimationCancel(p0: Animator?) {
+                            isAnimating = false
+                            constrainBitmapBounds()
+                        }
+
+                        override fun onAnimationRepeat(p0: Animator?) {
+                            // no op
+                        }
+                    })
                 }.start()
                 return true
             }
@@ -344,6 +365,7 @@ class LoupeImageView @JvmOverloads constructor(
     private var isVerticalScrollEnabled = true
     private var isHorizontalScrollEnabled = true
     private var isFlinging = false
+    private var isAnimating = false
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
@@ -441,7 +463,7 @@ class LoupeImageView @JvmOverloads constructor(
      * constrain bitmap bounds inside max bitmap bounds
      */
     private fun constrainBitmapBounds(animate: Boolean = false) {
-        if(isFlinging){
+        if(isFlinging || isAnimating){
             return
         }
 
