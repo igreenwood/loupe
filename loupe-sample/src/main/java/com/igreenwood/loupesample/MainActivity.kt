@@ -13,6 +13,14 @@ class MainActivity : AppCompatActivity() {
         val imageView = findViewById<LoupeImageView>(R.id.image)
         imageView.setImageResource(R.drawable.sample4)
         imageView.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
+            override fun onViewTranslate(view: LoupeImageView, progress: Float) {
+
+            }
+
+            override fun onRestore(view: LoupeImageView) {
+
+            }
+
             override fun onDismiss(view: LoupeImageView) {
                 finish()
             }
