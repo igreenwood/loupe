@@ -73,7 +73,7 @@ class LoupeImageView @JvmOverloads constructor(
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                if(isDragging()){
+                if(isDragging() || isFlinging || isAnimating){
                     return true
                 }
 
@@ -212,7 +212,6 @@ class LoupeImageView @JvmOverloads constructor(
 
                             override fun onAnimationCancel(p0: Animator?) {
                                 isFlinging = false
-                                constrainBitmapBounds()
                             }
 
                             override fun onAnimationRepeat(p0: Animator?) {
@@ -486,8 +485,11 @@ class LoupeImageView @JvmOverloads constructor(
             offset.y += viewport.bottom - bitmapBounds.bottom
         }
 
+        if(offset.equals(0f, 0f)){
+            return
+        }
+
         if (animate) {
-            Timber.e(">>>> constrain on up <<<<")
 
             if (!isVerticalScrollEnabled) {
                 bitmapBounds.offset(0f, offset.y)
