@@ -58,9 +58,9 @@ class LoupeImageView @JvmOverloads constructor(
     // displaying bitmap rect (does not move, recalculated on scale changed)
     private var viewport = RectF()
     // minimum scale of bitmap
-    private var minBmScale = 1f
+    private var minScale = 1f
     // maximum scale of bitmap
-    private var maxBmScale = 1f
+    private var maxScale = 1f
     // max zoom (1.0~imageMaxScale)
     private var maxZoom = DEFAULT_MAX_ZOOM
     // bitmap (decoded) width
@@ -87,36 +87,7 @@ class LoupeImageView @JvmOverloads constructor(
                 }
 
                 scale = calcNewScale(scaleFactor)
-
-                if (scale > minBmScale) {
-                    zoomTo(focalX, focalY)
-                } else {
-                    val startScale = scale
-                    ValueAnimator.ofFloat(startScale, minBmScale).apply {
-                        duration = ANIM_DURATION
-                        interpolator = DecelerateInterpolator()
-                        addUpdateListener {
-                            val newScale = it.animatedValue as Float
-                            scale = newScale
-                            zoomTo(focalX, focalY)
-                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-                        }
-                        addListener(object : Animator.AnimatorListener {
-                            override fun onAnimationStart(p0: Animator?) {
-                            }
-
-                            override fun onAnimationEnd(p0: Animator?) {
-                            }
-
-                            override fun onAnimationCancel(p0: Animator?) {
-                            }
-
-                            override fun onAnimationRepeat(p0: Animator?) {
-                                // no op
-                            }
-                        })
-                    }.start()
-                }
+                zoomTo(focalX, focalY)
 
                 return true
             }
@@ -143,19 +114,9 @@ class LoupeImageView @JvmOverloads constructor(
                     return true
                 }
 
-                if (scale > minBmScale) {
-                    val distX = if (isHorizontalScrollEnabled) {
-                        -distanceX
-                    } else {
-                        0f
-                    }
-                    val distY = if (isVerticalScrollEnabled) {
-                        -distanceY
-                    } else {
-                        0f
-                    }
-                    offsetBitmap(distX, distY)
-                } else if (scale == minBmScale) {
+                if (scale > minScale) {
+                    processScroll(distanceX, distanceY)
+                } else if (scale == minScale) {
                     processDrag(distanceY)
                 }
                 return true
@@ -169,70 +130,8 @@ class LoupeImageView @JvmOverloads constructor(
             ): Boolean {
                 e1 ?: return true
 
-                Timber.e("onFling: velocity = ($velocityX, $velocityY}) ======================================")
-
-                Timber.e("viewport = $viewport")
-                Timber.e("bitmapBounds = $bitmapBounds")
-
-                if (scale > minBmScale) {
-                    val (velX, velY) = velocityX to velocityY
-
-                    Timber.e("vel = ($velX, $velY)")
-
-                    if (velX == 0f && velY == 0f) {
-                        return true
-                    }
-
-                    val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
-
-                    scroller.forceFinished(true)
-                    scroller.fling(
-                        fromX.roundToInt(),
-                        fromY.roundToInt(),
-                        velX.roundToInt(),
-                        velY.roundToInt(),
-                        (viewport.right - bitmapBounds.width()).roundToInt(),
-                        viewport.left.roundToInt(),
-                        (viewport.bottom - bitmapBounds.height()).roundToInt(),
-                        viewport.top.roundToInt()
-                    )
-
-                    ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-
-                    val toX = scroller.finalX.toFloat()
-                    val toY = scroller.finalY.toFloat()
-
-                    ValueAnimator.ofFloat(0f, 1f).apply {
-                        duration = ANIM_DURATION
-                        interpolator = DecelerateInterpolator()
-                        addUpdateListener {
-                            val progress = it.animatedValue as Float
-                            val newLeft = lerp(progress, fromX, toX)
-                            val newTop = lerp(progress, fromY, toY)
-                            bitmapBounds.offsetTo(newLeft, newTop)
-                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-                        }
-                        addListener(object : Animator.AnimatorListener {
-                            override fun onAnimationStart(p0: Animator?) {
-                                Timber.e("flinging true >>>>>>")
-                                isFlinging = true
-                            }
-
-                            override fun onAnimationEnd(p0: Animator?) {
-                                Timber.e("<<<<<<<<<< flinging false ")
-                                isFlinging = false
-                                constrainBitmapBounds()
-                            }
-
-                            override fun onAnimationCancel(p0: Animator?) {
-                                isFlinging = false
-                            }
-
-                            override fun onAnimationRepeat(p0: Animator?) {
-                                // no op
-                            }
-                        })
-                    }.start()
+                if (scale > minScale) {
+                    if (processFling(velocityX, velocityY)) return true
                 }
                 return true
             }
@@ -244,174 +143,16 @@ class LoupeImageView @JvmOverloads constructor(
                     return true
                 }
                 
-                if (scale > minBmScale) {
-                    val startScale = scale
-                    val endScale = minBmScale
-                    val startLeft = bitmapBounds.left
-                    val startTop = bitmapBounds.top
-                    val endLeft = canvasBounds.centerX() - imageWidth * minBmScale * 0.5f
-                    val endTop = canvasBounds.centerY() - imageHeight * minBmScale * 0.5f
-                    ValueAnimator.ofFloat(0f, 1f).apply {
-                        duration = ANIM_DURATION
-                        interpolator = DecelerateInterpolator()
-                        addUpdateListener {
-                            val value = it.animatedValue as Float
-                            scale = lerp(value, startScale, endScale)
-                            val newLeft = lerp(value, startLeft, endLeft)
-                            val newTop = lerp(value, startTop, endTop)
-                            calcBounds()
-                            bitmapBounds.offsetTo(newLeft, newTop)
-                            constrainBitmapBounds()
-                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-                        }
-                        addListener(object : Animator.AnimatorListener {
-                            override fun onAnimationStart(p0: Animator?) {
-                                Timber.e("animationStart: scale = $scale, targetScale = $endScale")
-                                isAnimating = true
-                            }
-
-                            override fun onAnimationEnd(p0: Animator?) {
-                                isAnimating = false
-                                if(endScale == minBmScale){
-                                    scale = minBmScale
-                                    calcBounds()
-                                    constrainBitmapBounds()
-                                    postInvalidate()
-                                }
-                            }
-
-                            override fun onAnimationCancel(p0: Animator?) {
-                                isAnimating = false
-                            }
-
-                            override fun onAnimationRepeat(p0: Animator?) {
-                                // no op
-                            }
-                        })
-                    }.start()
+                if (scale > minScale) {
+                    jumpToMinimumScale()
                 } else {
-                    val startScale = scale
-                    val endScale = minBmScale * maxZoom * 0.5f
-                    val focalX = e.x
-                    val focalY = e.y
-                    ValueAnimator.ofFloat(startScale, endScale).apply {
-                        duration = ANIM_DURATION
-                        interpolator = DecelerateInterpolator()
-                        addUpdateListener {
-                            scale = it.animatedValue as Float
-                            zoomTo(focalX, focalY)
-                            ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
-                        }
-                        addListener(object : Animator.AnimatorListener {
-                            override fun onAnimationStart(p0: Animator?) {
-                                Timber.e("animationStart: scale = $scale, targetScale = $endScale")
-                                isAnimating = true
-                            }
-
-                            override fun onAnimationEnd(p0: Animator?) {
-                                isAnimating = false
-                                if(endScale == minBmScale){
-                                    scale = minBmScale
-                                    zoomTo(focalX, focalY)
-                                    postInvalidate()
-                                }
-                            }
-
-                            override fun onAnimationCancel(p0: Animator?) {
-                                isAnimating = false
-                            }
-
-                            override fun onAnimationRepeat(p0: Animator?) {
-                                // no op
-                            }
-                        })
-                    }.start()
+                    jumpToMediumScale(e)
                 }
                 return true
             }
 
 
         }
-
-    private fun processDrag(distanceY: Float) {
-        val view = this
-        view.y =
-            view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        view.alpha = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.6f)
-        val scale = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.95f)
-        view.scaleX = scale
-        view.scaleY = scale
-        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, dismissThreshold))
-    }
-
-    private fun dismissOrRestoreIfNeeded() {
-        if (!isDragging()) {
-            return
-        }
-        dismissOrRestore()
-    }
-
-    private fun dismissOrRestore() {
-        val view = this
-
-        if (abs(y) > dismissThreshold) {
-            Timber.e("over threshold")
-            val translationY = if (y > 0) {
-                originalViewBounds.top + view.height - view.top
-            } else {
-                originalViewBounds.top - view.height - view.top
-            }
-            animate()
-                .setDuration(ANIM_DURATION)
-                .setInterpolator(AccelerateDecelerateInterpolator())
-                .alpha(0f)
-                .translationY(translationY.toFloat())
-                .setListener(object : Animator.AnimatorListener {
-                    override fun onAnimationStart(p0: Animator?) {
-                        isDismissing = true
-                    }
-
-                    override fun onAnimationEnd(p0: Animator?) {
-                        isDismissing = false
-                        onDismissListener?.onDismiss(this@LoupeImageView)
-                    }
-
-                    override fun onAnimationCancel(p0: Animator?) {
-                        isDismissing = false
-                    }
-
-                    override fun onAnimationRepeat(p0: Animator?) {
-                        // no op
-                    }
-                })
-        } else {
-            Timber.e("within threshold")
-            animate()
-                .setDuration(ANIM_DURATION)
-                .setInterpolator(AccelerateDecelerateInterpolator())
-                .scaleX(1f)
-                .scaleY(1f)
-                .alpha(1f)
-                .translationY((originalViewBounds.top - view.top).toFloat())
-                .setListener(object : Animator.AnimatorListener {
-                    override fun onAnimationStart(p0: Animator?) {
-                        // no op
-                    }
-
-                    override fun onAnimationEnd(p0: Animator?) {
-                        onDismissListener?.onRestore(this@LoupeImageView)
-                    }
-
-                    override fun onAnimationCancel(p0: Animator?) {
-                        // no op
-                    }
-
-                    override fun onAnimationRepeat(p0: Animator?) {
-                        // no op
-                    }
-                })
-        }
-    }
 
     private val scroller: OverScroller
     private var originalViewBounds = Rect()
@@ -432,6 +173,252 @@ class LoupeImageView @JvmOverloads constructor(
         scroller = OverScroller(context)
     }
 
+    private fun processFling(velocityX: Float, velocityY: Float): Boolean {
+        val (velX, velY) = velocityX to velocityY
+
+        Timber.e("vel = ($velX, $velY)")
+
+        if (velX == 0f && velY == 0f) {
+            return true
+        }
+
+        val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
+
+        scroller.forceFinished(true)
+        scroller.fling(
+            fromX.roundToInt(),
+            fromY.roundToInt(),
+            velX.roundToInt(),
+            velY.roundToInt(),
+            (viewport.right - bitmapBounds.width()).roundToInt(),
+            viewport.left.roundToInt(),
+            (viewport.bottom - bitmapBounds.height()).roundToInt(),
+            viewport.top.roundToInt()
+        )
+
+        ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+
+        val toX = scroller.finalX.toFloat()
+        val toY = scroller.finalY.toFloat()
+
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ANIM_DURATION
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                val progress = it.animatedValue as Float
+                val newLeft = lerp(progress, fromX, toX)
+                val newTop = lerp(progress, fromY, toY)
+                bitmapBounds.offsetTo(newLeft, newTop)
+                ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+            }
+            addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    isFlinging = true
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    isFlinging = false
+                    constrainBitmapBounds()
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    isFlinging = false
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+        }.start()
+        return false
+    }
+
+    private fun processScroll(distanceX: Float, distanceY: Float) {
+        val distX = if (isHorizontalScrollEnabled) {
+            -distanceX
+        } else {
+            0f
+        }
+        val distY = if (isVerticalScrollEnabled) {
+            -distanceY
+        } else {
+            0f
+        }
+        offsetBitmap(distX, distY)
+    }
+
+    private fun jumpToMediumScale(e: MotionEvent) {
+        val startScale = scale
+        val endScale = minScale * maxZoom * 0.5f
+        val focalX = e.x
+        val focalY = e.y
+        ValueAnimator.ofFloat(startScale, endScale).apply {
+            duration = ANIM_DURATION
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                scale = it.animatedValue as Float
+                zoomTo(focalX, focalY)
+                ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+            }
+            addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    Timber.e("animationStart: scale = $scale, targetScale = $endScale")
+                    isAnimating = true
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    isAnimating = false
+                    if (endScale == minScale) {
+                        scale = minScale
+                        zoomTo(focalX, focalY)
+                        postInvalidate()
+                    }
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    isAnimating = false
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+        }.start()
+    }
+
+    private fun jumpToMinimumScale() {
+        val startScale = scale
+        val endScale = minScale
+        val startLeft = bitmapBounds.left
+        val startTop = bitmapBounds.top
+        val endLeft = canvasBounds.centerX() - imageWidth * minScale * 0.5f
+        val endTop = canvasBounds.centerY() - imageHeight * minScale * 0.5f
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ANIM_DURATION
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                val value = it.animatedValue as Float
+                scale = lerp(value, startScale, endScale)
+                val newLeft = lerp(value, startLeft, endLeft)
+                val newTop = lerp(value, startTop, endTop)
+                calcBounds()
+                bitmapBounds.offsetTo(newLeft, newTop)
+                constrainBitmapBounds()
+                ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
+            }
+            addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    Timber.e("animationStart: scale = $scale, targetScale = $endScale")
+                    isAnimating = true
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    isAnimating = false
+                    if (endScale == minScale) {
+                        scale = minScale
+                        calcBounds()
+                        constrainBitmapBounds()
+                        postInvalidate()
+                    }
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    isAnimating = false
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+        }.start()
+    }
+
+    private fun processDrag(distanceY: Float) {
+        val view = this
+        view.y =
+            view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        view.alpha = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.6f)
+        val scale = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.95f)
+        view.scaleX = scale
+        view.scaleY = scale
+        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, dismissThreshold))
+    }
+
+    private fun dismissOrRestoreIfNeeded() {
+        if (!isDragging()) {
+            return
+        }
+        dismissOrRestore()
+    }
+
+    private fun dismissOrRestore() {
+        if (abs(y) > dismissThreshold) {
+            dismiss()
+        } else {
+            restoreViewTransform()
+        }
+    }
+
+    private fun restoreViewTransform() {
+        val view = this
+        animate()
+            .setDuration(ANIM_DURATION)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .scaleX(1f)
+            .scaleY(1f)
+            .alpha(1f)
+            .translationY((originalViewBounds.top - view.top).toFloat())
+            .setListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    // no op
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    onDismissListener?.onRestore(this@LoupeImageView)
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    // no op
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+    }
+
+    private fun dismiss() {
+        val view = this
+        val translationY = if (y > 0) {
+            originalViewBounds.top + view.height - view.top
+        } else {
+            originalViewBounds.top - view.height - view.top
+        }
+        animate()
+            .setDuration(ANIM_DURATION)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .alpha(0f)
+            .translationY(translationY.toFloat())
+            .setListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                    isDismissing = true
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    isDismissing = false
+                    onDismissListener?.onDismiss(this@LoupeImageView)
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    isDismissing = false
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+    }
+
     private fun isDragging() = y != 0f
 
     /**
@@ -439,13 +426,11 @@ class LoupeImageView @JvmOverloads constructor(
      * focalY: focal y in current bitmapBounds
      */
     private fun zoomTo(focalX: Float, focalY: Float) {
-        Timber.e("zoomTo")
         val lastBounds = RectF(bitmapBounds)
         // scale has changed, recalculate bitmap bounds
         calcBounds()
         // offset to focalPoint
         offsetToZoomFocalPoint(focalX, focalY, lastBounds, bitmapBounds)
-        constrainBitmapBounds()
     }
 
     override fun setImageDrawable(drawable: Drawable?) {
@@ -455,7 +440,6 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     override fun setImageResource(resId: Int) {
-//        Timber.e("setImageResource")
         isReadyToDraw = false
         super.setImageResource(resId)
         updateLayout()
@@ -468,7 +452,6 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun updateLayout() {
-//        Timber.e("updateLayout")
         setupLayout()
     }
 
@@ -492,15 +475,11 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun getBitmap(): Bitmap? {
-        return (getDrawable() as? BitmapDrawable)?.bitmap
+        return (drawable as? BitmapDrawable)?.bitmap
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-//        Timber.e("onSizeChanged")
-        originalViewBounds.set(left, top, right, bottom)
-        dismissThreshold = originalViewBounds.height() * DEFAULT_DISMISS_THRESHOLD_RATIO
-
         setupLayout()
     }
 
@@ -508,8 +487,10 @@ class LoupeImageView @JvmOverloads constructor(
      * setup layout
      */
     private fun setupLayout() {
+        originalViewBounds.set(left, top, right, bottom)
+        dismissThreshold = originalViewBounds.height() * DEFAULT_DISMISS_THRESHOLD_RATIO
+
         val bm = getBitmap()
-//        Timber.e("setupLayout start: width = $width, height = $height, bm = $bm")
         if (width == 0 || height == 0 || bm == null) return
         imageWidth = bm.width.toFloat()
         imageHeight = bm.height.toFloat()
@@ -639,13 +620,13 @@ class LoupeImageView @JvmOverloads constructor(
     ) {
         val canvasRatio = canvasHeight / canvasWidth
         val bitmapRatio = bitmapHeight / bitmapWidth
-        minBmScale = if (canvasRatio > bitmapRatio) {
+        minScale = if (canvasRatio > bitmapRatio) {
             canvasWidth / bitmapWidth
         } else {
             canvasHeight / bitmapHeight
         }
-        scale = minBmScale
-        maxBmScale = minBmScale * maxZoom
+        scale = minScale
+        maxScale = minScale * maxZoom
     }
 
     override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
@@ -660,23 +641,22 @@ class LoupeImageView @JvmOverloads constructor(
         }
 
         val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
-        val isScaleAnimationIsRunning = scale < minBmScale
+        val isScaleAnimationIsRunning = scale < minScale
         if (scaleEvent != scaleGestureDetector?.isInProgress && !isScaleAnimationIsRunning) {
             // handle single touch gesture when scaling process is not running
             gestureDetector?.onTouchEvent(event)
         }
 
         if (event?.action == MotionEvent.ACTION_UP) {
-
             when{
-                scale == minBmScale -> {
+                scale == minScale -> {
                     dismissOrRestoreIfNeeded()
                 }
-                scale > minBmScale -> {
+                scale > minScale -> {
                     constrainBitmapBounds(true)
                 }
                 else -> {
-                    // no op
+                    jumpToMinimumScale()
                 }
             }
         }
@@ -686,7 +666,7 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun calcNewScale(newScale: Float): Float {
-        return min(maxBmScale, newScale * scale)
+        return min(maxScale, newScale * scale)
     }
 
     private fun constrain(min: Float, value: Float, max: Float): Float {
