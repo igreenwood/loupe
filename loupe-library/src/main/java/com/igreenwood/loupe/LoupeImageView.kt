@@ -86,8 +86,7 @@ class LoupeImageView @JvmOverloads constructor(
                     return true
                 }
 
-                scale = calcNewScale(scaleFactor)
-                zoomTo(focalX, focalY)
+                zoom(calcNewScale(scaleFactor), focalX, focalY)
 
                 return true
             }
@@ -256,21 +255,18 @@ class LoupeImageView @JvmOverloads constructor(
             duration = ANIM_DURATION
             interpolator = DecelerateInterpolator()
             addUpdateListener {
-                scale = it.animatedValue as Float
-                zoomTo(focalX, focalY)
+                zoom(it.animatedValue as Float, focalX, focalY)
                 ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    Timber.e("animationStart: scale = $scale, targetScale = $endScale")
                     isAnimating = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
                     isAnimating = false
                     if (endScale == minScale) {
-                        scale = minScale
-                        zoomTo(focalX, focalY)
+                        zoom(minScale, focalX, focalY)
                         postInvalidate()
                     }
                 }
@@ -422,10 +418,12 @@ class LoupeImageView @JvmOverloads constructor(
     private fun isDragging() = y != 0f
 
     /**
+     * targetScale: new scale
      * focalX: focal x in current bitmapBounds
      * focalY: focal y in current bitmapBounds
      */
-    private fun zoomTo(focalX: Float, focalY: Float) {
+    private fun zoom(targetScale: Float, focalX: Float, focalY: Float) {
+        scale = targetScale
         val lastBounds = RectF(bitmapBounds)
         // scale has changed, recalculate bitmap bounds
         calcBounds()
@@ -504,14 +502,10 @@ class LoupeImageView @JvmOverloads constructor(
         invalidate()
     }
 
-    /**
-     * constrain bitmap bounds inside max bitmap bounds
-     */
     private fun constrainBitmapBounds(animate: Boolean = false) {
         if(isFlinging || isAnimating){
             return
         }
-        Timber.e("constrainBitmapBounds: animate = $animate")
 
         val offset = PointF()
 
