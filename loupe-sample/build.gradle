@@ -39,4 +39,6 @@ dependencies {
     annotationProcessor 'com.github.bumptech.glide:compiler:4.10.0'
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
+    implementation 'com.xwray:groupie:2.7.0'
+    implementation "com.xwray:groupie-databinding:2.7.0"
 }
