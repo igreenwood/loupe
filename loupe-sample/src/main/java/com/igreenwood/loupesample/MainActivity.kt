@@ -14,19 +14,26 @@ class MainActivity : AppCompatActivity() {
     private var adapter = GroupAdapter<GroupieViewHolder>()
     private val singleImageListener = object : SingleImageItem.Listener {
         override fun onClick(url: String) {
-
+            startActivity(ImageDetailActivity.createIntent(this@MainActivity, url))
+            overridePendingTransition(R.anim.fade_in_fast, 0)
         }
-
     }
     private val multipleImageListener = object : MultipleImageItem.Listener {
         override fun onClick(urls: List<String>, index: Int) {
-
+            startActivity(ImageDetailActivity.createIntent(this@MainActivity, urls[index]))
+            overridePendingTransition(R.anim.fade_in_fast,0)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(false)
+            setHomeButtonEnabled(false)
+            title = "loupe sample"
+        }
         adapter.apply {
             addAll(ImageUrls.singleImageUrls.map { SingleImageItem(it, singleImageListener) })
             add(MultipleImageItem(ImageUrls.multipleImageUrls, multipleImageListener))

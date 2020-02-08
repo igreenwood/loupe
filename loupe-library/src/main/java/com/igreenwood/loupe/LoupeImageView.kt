@@ -8,6 +8,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -31,14 +32,14 @@ class LoupeImageView @JvmOverloads constructor(
     companion object {
         const val DEFAULT_MAX_ZOOM = 10.0f
         const val ANIM_DURATION = 250L
-        const val DEFAULT_DISMISS_THRESHOLD_RATIO = 0.15f
         const val DEFAULT_VIEW_DRAG_RATIO = 0.7f
     }
 
     interface OnViewTranslateListener {
+        fun onStart(view: LoupeImageView)
         fun onViewTranslate(view: LoupeImageView, progress: Float)
-        fun onRestore(view: LoupeImageView)
         fun onDismiss(view: LoupeImageView)
+        fun onRestore(view: LoupeImageView)
     }
 
     // bitmap matrix
@@ -170,6 +171,11 @@ class LoupeImageView @JvmOverloads constructor(
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
         gestureDetector = GestureDetector(context, onGestureListener)
         scroller = OverScroller(context)
+        dismissThreshold = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            48f,
+            resources.displayMetrics
+        )
     }
 
     private fun processFling(velocityX: Float, velocityY: Float): Boolean {
@@ -330,14 +336,12 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun processDrag(distanceY: Float) {
+        if(y == 0f){
+            onDismissListener?.onStart(this)
+        }
         val view = this
-        view.y =
-            view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        view.alpha = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.6f)
-        val scale = map(abs(view.y), 0f, dismissThreshold, 1.0f, 0.95f)
-        view.scaleX = scale
-        view.scaleY = scale
-        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, dismissThreshold))
+        view.y = view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
     }
 
     private fun dismissOrRestoreIfNeeded() {
@@ -360,10 +364,10 @@ class LoupeImageView @JvmOverloads constructor(
         animate()
             .setDuration(ANIM_DURATION)
             .setInterpolator(AccelerateDecelerateInterpolator())
-            .scaleX(1f)
-            .scaleY(1f)
-            .alpha(1f)
             .translationY((originalViewBounds.top - view.top).toFloat())
+            .setUpdateListener {
+                onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
+            }
             .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
                     // no op
@@ -393,8 +397,10 @@ class LoupeImageView @JvmOverloads constructor(
         animate()
             .setDuration(ANIM_DURATION)
             .setInterpolator(AccelerateDecelerateInterpolator())
-            .alpha(0f)
             .translationY(translationY.toFloat())
+            .setUpdateListener {
+                onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
+            }
             .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
                     isDismissing = true
@@ -486,8 +492,6 @@ class LoupeImageView @JvmOverloads constructor(
      */
     private fun setupLayout() {
         originalViewBounds.set(left, top, right, bottom)
-        dismissThreshold = originalViewBounds.height() * DEFAULT_DISMISS_THRESHOLD_RATIO
-
         val bm = getBitmap()
         if (width == 0 || height == 0 || bm == null) return
         imageWidth = bm.width.toFloat()
