@@ -12,11 +12,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private var adapter = GroupAdapter<GroupieViewHolder>()
-    private val headerImageListener = object : HeaderImageItem.Listener {
-        override fun onClick(url: String) {
-
-        }
-    }
     private val singleImageListener = object : SingleImageItem.Listener {
         override fun onClick(url: String) {
 
@@ -24,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     }
     private val multipleImageListener = object : MultipleImageItem.Listener {
-        override fun onClick(urls: List<String>) {
+        override fun onClick(urls: List<String>, index: Int) {
 
         }
     }
@@ -33,7 +28,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         adapter.apply {
-            add(HeaderImageItem(ImageUrls.headerImageUrl, headerImageListener))
             addAll(ImageUrls.singleImageUrls.map { SingleImageItem(it, singleImageListener) })
             add(MultipleImageItem(ImageUrls.multipleImageUrls, multipleImageListener))
             addAll(ImageUrls.singleImageUrls.map { SingleImageItem(it, singleImageListener) })

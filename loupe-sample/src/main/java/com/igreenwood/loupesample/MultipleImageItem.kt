@@ -9,7 +9,7 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
     BindableItem<RowMultipleImageBinding>() {
 
     interface Listener {
-        fun onClick(urls: List<String>)
+        fun onClick(urls: List<String>, index: Int)
     }
 
     override fun getLayout() = R.layout.row_multiple_image
@@ -35,8 +35,17 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
             .override(binding.bottomRightImage.width)
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.bottomRightImage)
-        binding.root.setOnClickListener {
-            listener.onClick(urls)
+        binding.topLeftImage.setOnClickListener {
+            listener.onClick(urls, 0)
+        }
+        binding.topRightImage.setOnClickListener {
+            listener.onClick(urls, 1)
+        }
+        binding.bottomLeftImage.setOnClickListener {
+            listener.onClick(urls, 2)
+        }
+        binding.bottomRightImage.setOnClickListener {
+            listener.onClick(urls, 3)
         }
     }
 }
