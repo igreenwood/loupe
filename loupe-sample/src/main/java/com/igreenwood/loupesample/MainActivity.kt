@@ -2,30 +2,19 @@ package com.igreenwood.loupesample
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.databinding.DataBindingUtil
 import com.igreenwood.loupe.LoupeImageView
+import com.igreenwood.loupesample.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMainBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
+        binding.recyclerView.apply {
 
-        val imageView = findViewById<LoupeImageView>(R.id.image)
-        imageView.setImageResource(R.drawable.sample4)
-        imageView.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
-            override fun onViewTranslate(view: LoupeImageView, progress: Float) {
-
-            }
-
-            override fun onRestore(view: LoupeImageView) {
-
-            }
-
-            override fun onDismiss(view: LoupeImageView) {
-                finish()
-            }
         }
-
-//        Glide.with(this).load("https://raw.githubusercontent.com/igreenwood/SimpleCropView/master/simplecropview-sample/src/main/res/drawable/sample4.png").into(imageView)
     }
 }
