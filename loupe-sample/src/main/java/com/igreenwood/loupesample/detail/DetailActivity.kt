@@ -97,8 +97,8 @@ class DetailActivity : AppCompatActivity() {
                     hideToolbar()
                 }
 
-                override fun onViewTranslate(view: LoupeImageView, progress: Float) {
-                    changeBackgroundAlpha(progress)
+                override fun onViewTranslate(view: LoupeImageView, amount: Float) {
+                    changeBackgroundAlpha(amount)
                 }
 
                 override fun onRestore(view: LoupeImageView) {
@@ -122,8 +122,8 @@ class DetailActivity : AppCompatActivity() {
                     hideToolbar()
                 }
 
-                override fun onViewTranslate(view: LoupeImageView, progress: Float) {
-                    changeBackgroundAlpha(progress)
+                override fun onViewTranslate(view: LoupeImageView, amount: Float) {
+                    changeBackgroundAlpha(amount)
                 }
 
                 override fun onRestore(view: LoupeImageView) {
@@ -146,8 +146,8 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeBackgroundAlpha(progress: Float) {
-        val newAlpha = ((1.0f - progress) * 255).roundToInt()
+    private fun changeBackgroundAlpha(amount: Float) {
+        val newAlpha = ((1.0f - amount) * 255).roundToInt()
         binding.root.background.alpha = newAlpha
     }
 

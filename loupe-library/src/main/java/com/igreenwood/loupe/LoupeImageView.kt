@@ -37,7 +37,7 @@ class LoupeImageView @JvmOverloads constructor(
 
     interface OnViewTranslateListener {
         fun onStart(view: LoupeImageView)
-        fun onViewTranslate(view: LoupeImageView, progress: Float)
+        fun onViewTranslate(view: LoupeImageView, amount: Float)
         fun onDismiss(view: LoupeImageView)
         fun onRestore(view: LoupeImageView)
     }
@@ -74,6 +74,7 @@ class LoupeImageView @JvmOverloads constructor(
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
+                Timber.e("onScale: isDragging = ${isDragging()}, isFlinging = $isFlinging, $isAnimating")
                 if(isDragging() || isFlinging || isAnimating){
                     return true
                 }
@@ -166,6 +167,7 @@ class LoupeImageView @JvmOverloads constructor(
     private var isHorizontalScrollEnabled = true
     private var isFlinging = false
     private var isAnimating = false
+    private var initialY = 0f
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
@@ -210,9 +212,9 @@ class LoupeImageView @JvmOverloads constructor(
             duration = ANIM_DURATION
             interpolator = DecelerateInterpolator()
             addUpdateListener {
-                val progress = it.animatedValue as Float
-                val newLeft = lerp(progress, fromX, toX)
-                val newTop = lerp(progress, fromY, toY)
+                val amount = it.animatedValue as Float
+                val newLeft = lerp(amount, fromX, toX)
+                val newTop = lerp(amount, fromY, toY)
                 bitmapBounds.offsetTo(newLeft, newTop)
                 ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
             }
@@ -336,12 +338,13 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun processDrag(distanceY: Float) {
-        if(y == 0f){
+        if(y == initialY){
             onDismissListener?.onStart(this)
         }
         val view = this
         view.y = view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
+        Timber.e("dist = ${abs(view.y - initialY)}, viewHeight = ${originalViewBounds.height()}")
+        onDismissListener?.onViewTranslate(this, calcTranslationAmount())
     }
 
     private fun dismissOrRestoreIfNeeded() {
@@ -366,7 +369,7 @@ class LoupeImageView @JvmOverloads constructor(
             .setInterpolator(AccelerateDecelerateInterpolator())
             .translationY((originalViewBounds.top - view.top).toFloat())
             .setUpdateListener {
-                onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
+                onDismissListener?.onViewTranslate(this, calcTranslationAmount())
             }
             .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
@@ -389,7 +392,7 @@ class LoupeImageView @JvmOverloads constructor(
 
     private fun dismiss() {
         val view = this
-        val translationY = if (y > 0) {
+        val translationY = if (y - initialY > 0) {
             originalViewBounds.top + view.height - view.top
         } else {
             originalViewBounds.top - view.height - view.top
@@ -399,7 +402,7 @@ class LoupeImageView @JvmOverloads constructor(
             .setInterpolator(AccelerateDecelerateInterpolator())
             .translationY(translationY.toFloat())
             .setUpdateListener {
-                onDismissListener?.onViewTranslate(this, norm(abs(view.y), 0f, originalViewBounds.height().toFloat()))
+                onDismissListener?.onViewTranslate(this, calcTranslationAmount())
             }
             .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
@@ -421,7 +424,10 @@ class LoupeImageView @JvmOverloads constructor(
             })
     }
 
-    private fun isDragging() = y != 0f
+    private fun calcTranslationAmount() =
+        constrain(0f, norm(abs(y - initialY), 0f, originalViewBounds.height().toFloat()), 1f)
+
+    private fun isDragging() = (y - initialY) != 0f
 
     /**
      * targetScale: new scale
@@ -485,6 +491,7 @@ class LoupeImageView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         setupLayout()
+        initialY = y
     }
 
     /**
@@ -553,9 +560,9 @@ class LoupeImageView @JvmOverloads constructor(
                 duration = ANIM_DURATION
                 interpolator = DecelerateInterpolator()
                 addUpdateListener {
-                    val progress = it.animatedValue as Float
-                    val newLeft = lerp(progress, start.left, end.left)
-                    val newTop = lerp(progress, start.top, end.top)
+                    val amount = it.animatedValue as Float
+                    val newLeft = lerp(amount, start.left, end.left)
+                    val newTop = lerp(amount, start.top, end.top)
                     bitmapBounds.offsetTo(newLeft, newTop)
                     ViewCompat.postInvalidateOnAnimation(this@LoupeImageView)
                 }
@@ -627,8 +634,8 @@ class LoupeImageView @JvmOverloads constructor(
         maxScale = minScale * maxZoom
     }
 
-    override fun dispatchTouchEvent(event: MotionEvent?): Boolean {
-        val result = super.dispatchTouchEvent(event)
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        val result = super.onTouchEvent(event)
 
         if (!isEnabled) {
             return result
