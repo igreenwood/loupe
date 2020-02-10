@@ -1,4 +1,4 @@
-package com.igreenwood.loupesample
+package com.igreenwood.loupesample.util
 
 object ImageUrls {
 

@@ -1,7 +1,9 @@
-package com.igreenwood.loupesample
+package com.igreenwood.loupesample.master.item
 
+import android.view.View
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
+import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.RowMultipleImageBinding
 import com.xwray.groupie.databinding.BindableItem
 
@@ -9,7 +11,7 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
     BindableItem<RowMultipleImageBinding>() {
 
     interface Listener {
-        fun onClick(urls: List<String>, index: Int)
+        fun onClick(view: View, urls: List<String>, index: Int)
     }
 
     override fun getLayout() = R.layout.row_multiple_image
@@ -35,17 +37,18 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
             .override(binding.bottomRightImage.width)
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.bottomRightImage)
+
         binding.topLeftImage.setOnClickListener {
-            listener.onClick(urls, 0)
+            listener.onClick(it, urls, 0)
         }
         binding.topRightImage.setOnClickListener {
-            listener.onClick(urls, 1)
+            listener.onClick(it, urls, 1)
         }
         binding.bottomLeftImage.setOnClickListener {
-            listener.onClick(urls, 2)
+            listener.onClick(it, urls, 2)
         }
         binding.bottomRightImage.setOnClickListener {
-            listener.onClick(urls, 3)
+            listener.onClick(it, urls, 3)
         }
     }
 }
