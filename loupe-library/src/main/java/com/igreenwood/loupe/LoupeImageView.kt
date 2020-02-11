@@ -168,6 +168,7 @@ class LoupeImageView @JvmOverloads constructor(
     private var isFlinging = false
     private var isAnimating = false
     private var initialY = 0f
+    var useDismissAnimation = true
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
@@ -355,8 +356,12 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun dismissOrRestore() {
-        if (abs(y) > dismissThreshold) {
-            dismiss()
+        if (abs(y - initialY) > dismissThreshold) {
+            if(useDismissAnimation){
+                startDismissAnimation()
+            } else {
+                onDismissListener?.onDismiss(this)
+            }
         } else {
             restoreViewTransform()
         }
@@ -390,7 +395,7 @@ class LoupeImageView @JvmOverloads constructor(
             })
     }
 
-    private fun dismiss() {
+    private fun startDismissAnimation() {
         val view = this
         val translationY = if (y - initialY > 0) {
             originalViewBounds.top + view.height - view.top

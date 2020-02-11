@@ -5,14 +5,14 @@
     >
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        >
         <ImageView
             android:id="@+id/image"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:adjustViewBounds="true"
             android:scaleType="centerCrop"
-            android:foreground="?android:selectableItemBackground"
             app:layout_constraintDimensionRatio="16:9"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"

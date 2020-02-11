@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
-import androidx.core.view.ViewCompat
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.igreenwood.loupesample.*
@@ -117,7 +116,6 @@ class MasterActivity : AppCompatActivity() {
     private fun goToDetail(view: View, url: String) {
         if (Pref.useSharedElements) {
             view.transitionName = TransitionName.MASTER_DETAIL_TRANSITION
-            Timber.e("transitionName= ${view.transitionName}")
             startActivity(
                 DetailActivity.createIntent(
                     this@MasterActivity,

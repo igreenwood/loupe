@@ -13,8 +13,10 @@ import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import com.igreenwood.loupe.LoupeImageView
 import com.igreenwood.loupesample.R
@@ -56,11 +58,16 @@ class DetailActivity : AppCompatActivity() {
 
         initToolbar()
 
+        binding.root.background = ColorDrawable(ContextCompat.getColor(this@DetailActivity,
+            R.color.black_alpha_87
+        ))
+
         if(Pref.useSharedElements){
             // shared elements
             binding.image.transitionName = TransitionName.MASTER_DETAIL_TRANSITION
             Glide.with(binding.image.context)
                 .load(url)
+                .apply(RequestOptions().skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE))
                 .thumbnail(
                     Glide.with(binding.image.context)
                         .load(url)
@@ -72,6 +79,7 @@ class DetailActivity : AppCompatActivity() {
                                     target: Target<Drawable>?,
                                     isFirstResource: Boolean
                                 ): Boolean {
+                                    supportStartPostponedEnterTransition()
                                     return false
                                 }
 
@@ -90,7 +98,7 @@ class DetailActivity : AppCompatActivity() {
                         )
                 )
                 .into(binding.image)
-
+            binding.image.useDismissAnimation = false
             binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
 
                 override fun onStart(view: LoupeImageView) {
@@ -106,15 +114,12 @@ class DetailActivity : AppCompatActivity() {
                 }
 
                 override fun onDismiss(view: LoupeImageView) {
-                    finish()
+                    supportFinishAfterTransition()
                 }
             }
         } else {
             // swipe to dismiss
             Glide.with(binding.image.context).load(url).override(binding.image.height).into(binding.image)
-            binding.root.background = ColorDrawable(ContextCompat.getColor(this@DetailActivity,
-                R.color.black_alpha_87
-            ))
 
             binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
 
@@ -164,7 +169,11 @@ class DetailActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        finish()
+        if(Pref.useSharedElements){
+            supportFinishAfterTransition()
+        } else {
+            finish()
+        }
         return true
     }
 
