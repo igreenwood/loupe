@@ -13,7 +13,6 @@ import com.igreenwood.loupesample.master.item.MultipleImageItem
 import com.igreenwood.loupesample.master.item.SingleImageItem
 import com.igreenwood.loupesample.util.ImageUrls
 import com.igreenwood.loupesample.util.Pref
-import com.igreenwood.loupesample.util.TransitionName
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
 import timber.log.Timber
@@ -124,7 +123,6 @@ class MasterActivity : AppCompatActivity() {
 
     private fun goToDetail(view: View, url: String) {
         if (Pref.useSharedElements) {
-            view.transitionName = TransitionName.MASTER_DETAIL_TRANSITION
             startActivity(
                 DetailActivity.createIntent(
                     this@MasterActivity,

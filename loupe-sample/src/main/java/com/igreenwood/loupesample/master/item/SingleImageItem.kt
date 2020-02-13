@@ -25,7 +25,7 @@ class SingleImageItem(var url: String, var listener: Listener) :
             .transition(DrawableTransitionOptions.withCrossFade())
             .into(binding.image)
         binding.root.setOnClickListener {
-            listener.onClick(it, url)
+            listener.onClick(binding.image, url)
         }
     }
 }

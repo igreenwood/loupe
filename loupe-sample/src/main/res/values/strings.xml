@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">loupe-sample</string>
+    <string name="app_name">loupe</string>
+    <string name="shared_image_transition">shared_image_transition</string>
 </resources>

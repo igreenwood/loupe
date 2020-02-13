@@ -22,7 +22,6 @@ import com.igreenwood.loupe.LoupeImageView
 import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.util.Pref
-import com.igreenwood.loupesample.util.TransitionName
 import kotlin.math.roundToInt
 
 class DetailActivity : AppCompatActivity() {
@@ -64,7 +63,6 @@ class DetailActivity : AppCompatActivity() {
 
         if(Pref.useSharedElements){
             // shared elements
-            binding.image.transitionName = TransitionName.MASTER_DETAIL_TRANSITION
             Glide.with(binding.image.context)
                 .load(url)
                 .apply(RequestOptions().skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE))
