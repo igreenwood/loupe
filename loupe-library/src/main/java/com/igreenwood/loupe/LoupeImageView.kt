@@ -179,6 +179,7 @@ class LoupeImageView @JvmOverloads constructor(
             48f,
             resources.displayMetrics
         )
+        scaleType = ScaleType.MATRIX
     }
 
     private fun processFling(velocityX: Float, velocityY: Float): Boolean {
@@ -475,7 +476,7 @@ class LoupeImageView @JvmOverloads constructor(
             val bm = getBitmap()
             if (bm != null) {
                 setTransform()
-                canvas?.drawBitmap(bm, transfrom, bitmapPaint)
+                super.onDraw(canvas)
             }
         }
     }
@@ -487,6 +488,7 @@ class LoupeImageView @JvmOverloads constructor(
             postScale(scale, scale)
             postTranslate(bitmapBounds.centerX(), bitmapBounds.centerY())
         }
+        imageMatrix = transfrom
     }
 
     private fun getBitmap(): Bitmap? {
