@@ -4,20 +4,33 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="@dimen/spacing">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/swipe_down_sample_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Open Swipe to dismiss sample" />
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/colorPrimary"
+            />
 
-        <Button
-            android:id="@+id/shared_element_sample_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Open SharedElements sample" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing"
+            >
+            <Button
+                android:id="@+id/swipe_down_sample_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open Swipe to dismiss sample" />
+
+            <Button
+                android:id="@+id/shared_element_sample_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Open SharedElements sample" />
+        </LinearLayout>
 
     </LinearLayout>
 </layout>

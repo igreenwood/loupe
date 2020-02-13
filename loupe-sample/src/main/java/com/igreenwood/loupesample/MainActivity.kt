@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        initToolbar()
         binding.sharedElementSampleButton.setOnClickListener {
             Pref.useSharedElements = true
             goToMaster()
@@ -28,5 +29,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun goToMaster() {
         startActivity(Intent(this, MasterActivity::class.java))
+    }
+
+    private fun initToolbar() {
+        setSupportActionBar(binding.toolbar)
+        supportActionBar?.apply {
+            setLogo(R.drawable.logo)
+            title = "loupe"
+        }
     }
 }

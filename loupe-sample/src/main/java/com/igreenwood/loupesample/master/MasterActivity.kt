@@ -45,6 +45,11 @@ class MasterActivity : AppCompatActivity() {
         initRecyclerView()
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
     private fun initRecyclerView() {
         adapter.apply {
             addAll(ImageUrls.singleImageUrls.map {
@@ -103,9 +108,13 @@ class MasterActivity : AppCompatActivity() {
     private fun initToolbar() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
-            setDisplayHomeAsUpEnabled(false)
-            setHomeButtonEnabled(false)
-            title = "loupe sample"
+            setDisplayHomeAsUpEnabled(true)
+            setHomeButtonEnabled(true)
+            title = if(Pref.useSharedElements){
+                "shared elements sample"
+            } else {
+                "swipe to dismiss sample"
+            }
         }
     }
 
