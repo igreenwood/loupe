@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.bumptech.glide.Glide
@@ -18,7 +19,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.igreenwood.loupe.LoupeImageView
+import com.igreenwood.loupe.Loupe
 import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.util.Pref
@@ -38,6 +39,7 @@ class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
     private val url: String by lazy { intent.getStringExtra(ARGS_IMAGE_URL) }
+    private lateinit var loupe: Loupe
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,9 +48,7 @@ class DetailActivity : AppCompatActivity() {
             postponeEnterTransition()
         }
 
-        binding = DataBindingUtil.setContentView(this,
-            R.layout.activity_detail
-        )
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_detail)
 
         //android O fix orientation bug
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -60,6 +60,8 @@ class DetailActivity : AppCompatActivity() {
         binding.root.background = ColorDrawable(ContextCompat.getColor(this@DetailActivity,
             R.color.black_alpha_87
         ))
+
+        loupe = Loupe(binding.image)
 
         if(Pref.useSharedElements){
             // shared elements
@@ -90,43 +92,43 @@ class DetailActivity : AppCompatActivity() {
                 })
                 .apply(RequestOptions().skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE))
                 .into(binding.image)
-            binding.image.useDismissAnimation = false
-            binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
+            loupe.useDismissAnimation = false
+            loupe.onDismissListener = object : Loupe.OnViewTranslateListener {
 
-                override fun onStart(view: LoupeImageView) {
+                override fun onStart(view: ImageView) {
                     hideToolbar()
                 }
 
-                override fun onViewTranslate(view: LoupeImageView, amount: Float) {
+                override fun onViewTranslate(view: ImageView, amount: Float) {
                     changeBackgroundAlpha(amount)
                 }
 
-                override fun onRestore(view: LoupeImageView) {
+                override fun onRestore(view: ImageView) {
                     showToolbar()
                 }
 
-                override fun onDismiss(view: LoupeImageView) {
+                override fun onDismiss(view: ImageView) {
                     finishAfterTransition()
                 }
             }
         } else {
             // swipe to dismiss
             Glide.with(binding.image.context).load(url).override(binding.image.height).into(binding.image)
-            binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
+            loupe.onDismissListener = object : Loupe.OnViewTranslateListener {
 
-                override fun onStart(view: LoupeImageView) {
+                override fun onStart(view: ImageView) {
                     hideToolbar()
                 }
 
-                override fun onViewTranslate(view: LoupeImageView, amount: Float) {
+                override fun onViewTranslate(view: ImageView, amount: Float) {
                     changeBackgroundAlpha(amount)
                 }
 
-                override fun onRestore(view: LoupeImageView) {
+                override fun onRestore(view: ImageView) {
                     showToolbar()
                 }
 
-                override fun onDismiss(view: LoupeImageView) {
+                override fun onDismiss(view: ImageView) {
                     finish()
                 }
             }

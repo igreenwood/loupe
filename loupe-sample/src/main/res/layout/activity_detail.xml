@@ -9,7 +9,7 @@
         android:fitsSystemWindows="true"
         >
 
-        <com.igreenwood.loupe.LoupeImageView
+        <ImageView
             android:id="@+id/image"
             android:layout_width="0dp"
             android:layout_height="0dp"
