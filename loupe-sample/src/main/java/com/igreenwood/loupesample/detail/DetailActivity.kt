@@ -43,7 +43,7 @@ class DetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if(Pref.useSharedElements){
-            supportPostponeEnterTransition()
+            postponeEnterTransition()
         }
 
         binding = DataBindingUtil.setContentView(this,
@@ -65,36 +65,30 @@ class DetailActivity : AppCompatActivity() {
             // shared elements
             Glide.with(binding.image.context)
                 .load(url)
+                .listener(object : RequestListener<Drawable>{
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        startPostponedEnterTransition()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        startPostponedEnterTransition()
+                        return false
+                    }
+
+                })
                 .apply(RequestOptions().skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE))
-                .thumbnail(
-                    Glide.with(binding.image.context)
-                        .load(url)
-                        .listener(
-                            object: RequestListener<Drawable>{
-                                override fun onLoadFailed(
-                                    e: GlideException?,
-                                    model: Any?,
-                                    target: Target<Drawable>?,
-                                    isFirstResource: Boolean
-                                ): Boolean {
-                                    supportStartPostponedEnterTransition()
-                                    return false
-                                }
-
-                                override fun onResourceReady(
-                                    resource: Drawable?,
-                                    model: Any?,
-                                    target: Target<Drawable>?,
-                                    dataSource: DataSource?,
-                                    isFirstResource: Boolean
-                                ): Boolean {
-                                    supportStartPostponedEnterTransition()
-                                    return false
-                                }
-
-                            }
-                        )
-                )
                 .into(binding.image)
             binding.image.useDismissAnimation = false
             binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
@@ -112,13 +106,12 @@ class DetailActivity : AppCompatActivity() {
                 }
 
                 override fun onDismiss(view: LoupeImageView) {
-                    supportFinishAfterTransition()
+                    finishAfterTransition()
                 }
             }
         } else {
             // swipe to dismiss
             Glide.with(binding.image.context).load(url).override(binding.image.height).into(binding.image)
-
             binding.image.onDismissListener = object : LoupeImageView.OnViewTranslateListener {
 
                 override fun onStart(view: LoupeImageView) {
