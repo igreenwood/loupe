@@ -75,7 +75,7 @@ class LoupeImageView @JvmOverloads constructor(
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
                 Timber.e("onScale: isDragging = ${isDragging()}, isFlinging = $isFlinging, $isAnimating")
-                if(isDragging() || isFlinging || isAnimating){
+                if (isDragging() || isFlinging || isAnimating) {
                     return true
                 }
 
@@ -132,7 +132,9 @@ class LoupeImageView @JvmOverloads constructor(
                 e1 ?: return true
 
                 if (scale > minScale) {
-                    if (processFling(velocityX, velocityY)) return true
+                    processFling(velocityX, velocityY)
+                } else {
+                    startDismissWithFling(velocityY)
                 }
                 return true
             }
@@ -140,10 +142,10 @@ class LoupeImageView @JvmOverloads constructor(
             override fun onDoubleTap(e: MotionEvent?): Boolean {
                 e ?: return false
 
-                if(isAnimating){
+                if (isAnimating) {
                     return true
                 }
-                
+
                 if (scale > minScale) {
                     jumpToMinimumScale()
                 } else {
@@ -154,6 +156,46 @@ class LoupeImageView @JvmOverloads constructor(
 
 
         }
+
+    private fun startDismissWithFling(velY: Float) {
+        if (velY == 0f) {
+            return
+        }
+
+        isDismissing = true
+
+        val view = this@LoupeImageView
+
+        val translateY = if (velY > 0) {
+            originalViewBounds.top + view.height - view.top
+        } else {
+            originalViewBounds.top - view.height - view.top
+        }
+        animate()
+            .setDuration(ANIM_DURATION)
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .translationY(translateY.toFloat())
+            .setUpdateListener {
+                onDismissListener?.onViewTranslate(this@LoupeImageView, calcTranslationAmount())
+            }
+            .setListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(p0: Animator?) {
+                }
+
+                override fun onAnimationEnd(p0: Animator?) {
+                    isDismissing = false
+                    onDismissListener?.onDismiss(this@LoupeImageView)
+                }
+
+                override fun onAnimationCancel(p0: Animator?) {
+                    isDismissing = false
+                }
+
+                override fun onAnimationRepeat(p0: Animator?) {
+                    // no op
+                }
+            })
+    }
 
     private val scroller: OverScroller
     private var originalViewBounds = Rect()
@@ -182,13 +224,13 @@ class LoupeImageView @JvmOverloads constructor(
         scaleType = ScaleType.MATRIX
     }
 
-    private fun processFling(velocityX: Float, velocityY: Float): Boolean {
+    private fun processFling(velocityX: Float, velocityY: Float) {
         val (velX, velY) = velocityX to velocityY
 
         Timber.e("vel = ($velX, $velY)")
 
         if (velX == 0f && velY == 0f) {
-            return true
+            return
         }
 
         val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
@@ -239,7 +281,6 @@ class LoupeImageView @JvmOverloads constructor(
                 }
             })
         }.start()
-        return false
     }
 
     private fun processScroll(distanceX: Float, distanceY: Float) {
@@ -340,26 +381,28 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun processDrag(distanceY: Float) {
-        if(y == initialY){
+        if (y == initialY) {
             onDismissListener?.onStart(this)
         }
         val view = this
-        view.y = view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        view.y =
+            view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
         Timber.e("dist = ${abs(view.y - initialY)}, viewHeight = ${originalViewBounds.height()}")
         onDismissListener?.onViewTranslate(this, calcTranslationAmount())
     }
 
     private fun dismissOrRestoreIfNeeded() {
-        if (!isDragging()) {
+        if (!isDragging() || isDismissing) {
             return
         }
+        Timber.e("dismissOrRestore: isDragging = ${isDragging()}, isDismissing = ${isDismissing}")
         dismissOrRestore()
     }
 
     private fun dismissOrRestore() {
         if (abs(y - initialY) > dismissThreshold) {
-            if(useDismissAnimation){
-                startDismissAnimation()
+            if (useDismissAnimation) {
+                startDismissWithDrag()
             } else {
                 onDismissListener?.onDismiss(this)
             }
@@ -396,9 +439,9 @@ class LoupeImageView @JvmOverloads constructor(
             })
     }
 
-    private fun startDismissAnimation() {
+    private fun startDismissWithDrag() {
         val view = this
-        val translationY = if (y - initialY > 0) {
+        val translateY = if (y - initialY > 0) {
             originalViewBounds.top + view.height - view.top
         } else {
             originalViewBounds.top - view.height - view.top
@@ -406,7 +449,7 @@ class LoupeImageView @JvmOverloads constructor(
         animate()
             .setDuration(ANIM_DURATION)
             .setInterpolator(AccelerateDecelerateInterpolator())
-            .translationY(translationY.toFloat())
+            .translationY(translateY.toFloat())
             .setUpdateListener {
                 onDismissListener?.onViewTranslate(this, calcTranslationAmount())
             }
@@ -452,22 +495,18 @@ class LoupeImageView @JvmOverloads constructor(
     override fun setImageDrawable(drawable: Drawable?) {
         isReadyToDraw = false
         super.setImageDrawable(drawable)
-        updateLayout()
+        setupLayout()
     }
 
     override fun setImageResource(resId: Int) {
         isReadyToDraw = false
         super.setImageResource(resId)
-        updateLayout()
+        setupLayout()
     }
 
     override fun setImageURI(uri: Uri?) {
         isReadyToDraw = false
         super.setImageURI(uri)
-        updateLayout()
-    }
-
-    private fun updateLayout() {
         setupLayout()
     }
 
@@ -521,7 +560,7 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun constrainBitmapBounds(animate: Boolean = false) {
-        if(isFlinging || isAnimating){
+        if (isFlinging || isAnimating) {
             return
         }
 
@@ -544,7 +583,7 @@ class LoupeImageView @JvmOverloads constructor(
             offset.y += viewport.bottom - bitmapBounds.bottom
         }
 
-        if(offset.equals(0f, 0f)){
+        if (offset.equals(0f, 0f)) {
             return
         }
 
@@ -660,7 +699,7 @@ class LoupeImageView @JvmOverloads constructor(
         }
 
         if (event?.action == MotionEvent.ACTION_UP) {
-            when{
+            when {
                 scale == minScale -> {
                     dismissOrRestoreIfNeeded()
                 }
@@ -690,7 +729,7 @@ class LoupeImageView @JvmOverloads constructor(
         focalY: Float,
         oldBounds: RectF,
         newBounds: RectF
-    ):PointF {
+    ): PointF {
         val oldX = constrain(viewport.left, focalX, viewport.right)
         val oldY = constrain(viewport.top, focalY, viewport.bottom)
         val newX = map(oldX, oldBounds.left, oldBounds.right, newBounds.left, newBounds.right)
