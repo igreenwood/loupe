@@ -6,10 +6,10 @@ import android.content.pm.ActivityInfo
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.bumptech.glide.Glide
@@ -39,12 +39,12 @@ class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
     private val url: String by lazy { intent.getStringExtra(ARGS_IMAGE_URL) }
-    private lateinit var loupe: Loupe
+    private var loupe: Loupe? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if(Pref.useSharedElements){
+        if (Pref.useSharedElements) {
             postponeEnterTransition()
         }
 
@@ -57,17 +57,19 @@ class DetailActivity : AppCompatActivity() {
 
         initToolbar()
 
-        binding.root.background = ColorDrawable(ContextCompat.getColor(this@DetailActivity,
-            R.color.black_alpha_87
-        ))
+        binding.root.background = ColorDrawable(
+            ContextCompat.getColor(
+                this@DetailActivity,
+                R.color.black_alpha_87
+            )
+        )
 
-        loupe = Loupe(binding.image)
-
-        if(Pref.useSharedElements){
+        if (Pref.useSharedElements) {
             // shared elements
             Glide.with(binding.image.context)
                 .load(url)
-                .listener(object : RequestListener<Drawable>{
+                .onlyRetrieveFromCache(true)
+                .listener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(
                         e: GlideException?,
                         model: Any?,
@@ -85,53 +87,80 @@ class DetailActivity : AppCompatActivity() {
                         dataSource: DataSource?,
                         isFirstResource: Boolean
                     ): Boolean {
+                        loupe = Loupe(binding.image).apply {
+                            useDismissAnimation = false
+                            onDismissListener = object : Loupe.OnViewTranslateListener {
+
+                                override fun onStart(view: ImageView) {
+                                    hideToolbar()
+                                }
+
+                                override fun onViewTranslate(view: ImageView, amount: Float) {
+                                    changeBackgroundAlpha(amount)
+                                }
+
+                                override fun onRestore(view: ImageView) {
+                                    showToolbar()
+                                }
+
+                                override fun onDismiss(view: ImageView) {
+                                    finishAfterTransition()
+                                }
+                            }
+                        }
                         startPostponedEnterTransition()
                         return false
                     }
 
                 })
-                .apply(RequestOptions().skipMemoryCache(true).diskCacheStrategy(DiskCacheStrategy.NONE))
                 .into(binding.image)
-            loupe.useDismissAnimation = false
-            loupe.onDismissListener = object : Loupe.OnViewTranslateListener {
-
-                override fun onStart(view: ImageView) {
-                    hideToolbar()
-                }
-
-                override fun onViewTranslate(view: ImageView, amount: Float) {
-                    changeBackgroundAlpha(amount)
-                }
-
-                override fun onRestore(view: ImageView) {
-                    showToolbar()
-                }
-
-                override fun onDismiss(view: ImageView) {
-                    finishAfterTransition()
-                }
-            }
         } else {
             // swipe to dismiss
-            Glide.with(binding.image.context).load(url).override(binding.image.height).into(binding.image)
-            loupe.onDismissListener = object : Loupe.OnViewTranslateListener {
+            Glide.with(binding.image.context).load(url)
+                .onlyRetrieveFromCache(true)
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        startPostponedEnterTransition()
+                        return false
+                    }
 
-                override fun onStart(view: ImageView) {
-                    hideToolbar()
-                }
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        loupe = Loupe(binding.image).apply {
+                            onDismissListener = object : Loupe.OnViewTranslateListener {
 
-                override fun onViewTranslate(view: ImageView, amount: Float) {
-                    changeBackgroundAlpha(amount)
-                }
+                                override fun onStart(view: ImageView) {
+                                    hideToolbar()
+                                }
 
-                override fun onRestore(view: ImageView) {
-                    showToolbar()
-                }
+                                override fun onViewTranslate(view: ImageView, amount: Float) {
+                                    changeBackgroundAlpha(amount)
+                                }
 
-                override fun onDismiss(view: ImageView) {
-                    finish()
-                }
-            }
+                                override fun onRestore(view: ImageView) {
+                                    showToolbar()
+                                }
+
+                                override fun onDismiss(view: ImageView) {
+                                    finish()
+                                }
+                            }
+                        }
+                        startPostponedEnterTransition()
+                        return false
+                    }
+
+                }).into(binding.image)
         }
     }
 
@@ -162,7 +191,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        if(Pref.useSharedElements){
+        if (Pref.useSharedElements) {
             supportFinishAfterTransition()
         } else {
             finish()
@@ -172,7 +201,7 @@ class DetailActivity : AppCompatActivity() {
 
     override fun finish() {
         super.finish()
-        if(!Pref.useSharedElements){
+        if (!Pref.useSharedElements) {
             overridePendingTransition(0, R.anim.fade_out_fast)
         }
     }
