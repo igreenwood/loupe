@@ -32,7 +32,9 @@ class LoupeImageView @JvmOverloads constructor(
     companion object {
         const val DEFAULT_MAX_ZOOM = 10.0f
         const val ANIM_DURATION = 250L
-        const val DEFAULT_VIEW_DRAG_RATIO = 0.7f
+        const val DEFAULT_VIEW_DRAG_RATIO = 1f
+        const val DEFAULT_DISMISS_THRESHOLD_RATIO = 0.25f
+        const val DEFAULT_DISMISS_WITH_FLING_THRESHOLD_DP = 96
     }
 
     interface OnViewTranslateListener {
@@ -110,10 +112,10 @@ class LoupeImageView @JvmOverloads constructor(
                 distanceX: Float,
                 distanceY: Float
             ): Boolean {
-
                 if (e2?.pointerCount != 1) {
                     return true
                 }
+                Timber.e("onScroll: distanceX = $distanceX, distanceY = $distanceY")
 
                 if (scale > minScale) {
                     processScroll(distanceX, distanceY)
@@ -134,7 +136,9 @@ class LoupeImageView @JvmOverloads constructor(
                 if (scale > minScale) {
                     processFling(velocityX, velocityY)
                 } else {
-                    startDismissWithFling(velocityY)
+                    if(abs(y - initialY) < dismissWithFlingThreshold){
+                        startDismissWithFling(velocityY)
+                    }
                 }
                 return true
             }
@@ -180,6 +184,7 @@ class LoupeImageView @JvmOverloads constructor(
             }
             .setListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
+
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
@@ -200,7 +205,8 @@ class LoupeImageView @JvmOverloads constructor(
     private val scroller: OverScroller
     private var originalViewBounds = Rect()
 
-    private var dismissThreshold = 0f
+    private var dismissWithDragThreshold = 0f
+    private var dismissWithFlingThreshold = 0f
 
     var onDismissListener: OnViewTranslateListener? = null
     var isDismissing = false
@@ -216,9 +222,9 @@ class LoupeImageView @JvmOverloads constructor(
         scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
         gestureDetector = GestureDetector(context, onGestureListener)
         scroller = OverScroller(context)
-        dismissThreshold = TypedValue.applyDimension(
+        dismissWithFlingThreshold = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
-            48f,
+            DEFAULT_DISMISS_WITH_FLING_THRESHOLD_DP.toFloat(),
             resources.displayMetrics
         )
         scaleType = ScaleType.MATRIX
@@ -380,14 +386,18 @@ class LoupeImageView @JvmOverloads constructor(
         }.start()
     }
 
+    private var lastDistY = 0f
+
     private fun processDrag(distanceY: Float) {
         if (y == initialY) {
             onDismissListener?.onStart(this)
         }
-        val view = this
-        view.y =
-            view.y - distanceY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        Timber.e("dist = ${abs(view.y - initialY)}, viewHeight = ${originalViewBounds.height()}")
+        Timber.e("processDrag: y = $y, distanceY = $distanceY")
+        val distY = (lastDistY + distanceY) / 2f
+        lastDistY = distanceY
+
+        y -= distY * viewDragRatio // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        Timber.e("dist = ${abs(y - initialY)}, viewHeight = ${originalViewBounds.height()}")
         onDismissListener?.onViewTranslate(this, calcTranslationAmount())
     }
 
@@ -400,7 +410,7 @@ class LoupeImageView @JvmOverloads constructor(
     }
 
     private fun dismissOrRestore() {
-        if (abs(y - initialY) > dismissThreshold) {
+        if (abs(y - initialY) > dismissWithDragThreshold) {
             if (useDismissAnimation) {
                 startDismissWithDrag()
             } else {
@@ -538,6 +548,7 @@ class LoupeImageView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         setupLayout()
         initialY = y
+        dismissWithDragThreshold = height * DEFAULT_DISMISS_THRESHOLD_RATIO
     }
 
     /**
@@ -683,6 +694,8 @@ class LoupeImageView @JvmOverloads constructor(
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         val result = super.onTouchEvent(event)
 
+        event ?: return result
+
         if (!isEnabled) {
             return result
         }
@@ -698,21 +711,23 @@ class LoupeImageView @JvmOverloads constructor(
             gestureDetector?.onTouchEvent(event)
         }
 
-        if (event?.action == MotionEvent.ACTION_UP) {
-            when {
-                scale == minScale -> {
-                    dismissOrRestoreIfNeeded()
-                }
-                scale > minScale -> {
-                    constrainBitmapBounds(true)
-                }
-                else -> {
-                    jumpToMinimumScale()
+        when(event.action){
+            MotionEvent.ACTION_UP -> {
+                when {
+                    scale == minScale -> {
+                        dismissOrRestoreIfNeeded()
+                    }
+                    scale > minScale -> {
+                        constrainBitmapBounds(true)
+                    }
+                    else -> {
+                        jumpToMinimumScale()
+                    }
                 }
             }
         }
 
-        invalidate()
+        postInvalidate()
         return true
     }
 
