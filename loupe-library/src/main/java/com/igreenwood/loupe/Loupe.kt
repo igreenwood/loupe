@@ -14,7 +14,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -76,6 +75,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     private var isAnimating = false
     private var initialY = 0f
     var useDismissAnimation = true
+    var isFlingDismissProcessRunning = false
     // scaling helper
     private var scaleGestureDetector: ScaleGestureDetector? = null
     // translating helper
@@ -84,7 +84,6 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                Timber.e("onScale: isDragging = ${isDragging()}, isFlinging = $isFlinging, $isAnimating")
                 if (isDragging() || isFlinging || isAnimating) {
                     return true
                 }
@@ -141,8 +140,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 if (scale > minScale) {
                     processFling(velocityX, velocityY)
                 } else {
-                    if (abs(imageView.y - initialY) < dismissWithFlingThreshold) {
-                        startDismissWithFling(velocityY)
+                    if (shouldTriggerFlingDismissAction()) {
+                        processFlingDismissAction(velocityY)
                     }
                 }
                 return true
@@ -165,6 +164,18 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
 
         }
+
+    private fun processFlingDismissAction(velocityY: Float) {
+        isFlingDismissProcessRunning = true
+
+        if (useDismissAnimation) {
+            startDismissWithFling(velocityY)
+        } else {
+            onDismissListener?.onDismiss(imageView)
+        }
+    }
+
+    private fun shouldTriggerFlingDismissAction() = abs(viewOffsetY()) < dismissWithFlingThreshold
 
     init {
         imageView.apply {
@@ -205,7 +216,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 MotionEvent.ACTION_UP -> {
                     when {
                         scale == minScale -> {
-                            dismissOrRestoreIfNeeded()
+                            if(!isFlingDismissProcessRunning){
+                                dismissOrRestoreIfNeeded()
+                            }
                         }
                         scale > minScale -> {
                             constrainBitmapBounds(true)
@@ -286,8 +299,6 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     private fun processFling(velocityX: Float, velocityY: Float) {
         val (velX, velY) = velocityX to velocityY
-
-        Timber.e("vel = ($velX, $velY)")
 
         if (velX == 0f && velY == 0f) {
             return
@@ -419,7 +430,6 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    Timber.e("animationStart: scale = $scale, targetScale = $endScale")
                     isAnimating = true
                 }
 
@@ -467,12 +477,11 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         if (!isDragging() || isDismissing) {
             return
         }
-        Timber.e("dismissOrRestore: isDragging = ${isDragging()}, isDismissing = ${isDismissing}")
         dismissOrRestore()
     }
 
     private fun dismissOrRestore() {
-        if (abs(imageView.y - initialY) > dismissWithDragThreshold) {
+        if (abs(viewOffsetY()) > dismissWithDragThreshold) {
             if (useDismissAnimation) {
                 startDismissWithDrag()
             } else {
@@ -550,11 +559,13 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     private fun calcTranslationAmount() =
         constrain(
             0f,
-            norm(abs(imageView.y - initialY), 0f, originalViewBounds.height().toFloat()),
+            norm(abs(viewOffsetY()), 0f, originalViewBounds.height().toFloat()),
             1f
         )
 
-    private fun isDragging() = (imageView.y - initialY) != 0f
+    private fun isDragging() = viewOffsetY() != 0f
+
+    private fun viewOffsetY() = imageView.y - initialY
 
     /**
      * targetScale: new scale
