@@ -51,7 +51,7 @@ class MasterActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         adapter.apply {
-            addAll(ImageUrls.singleImageUrls.map {
+            addAll(ImageUrls.urls1.map {
                 SingleImageItem(
                     it,
                     singleImageListener
@@ -59,11 +59,11 @@ class MasterActivity : AppCompatActivity() {
             })
             add(
                 MultipleImageItem(
-                    ImageUrls.multipleImageUrls,
+                    ImageUrls.urls2,
                     multipleImageListener
                 )
             )
-            addAll(ImageUrls.singleImageUrls.map {
+            addAll(ImageUrls.urls3.map {
                 SingleImageItem(
                     it,
                     singleImageListener
@@ -71,11 +71,11 @@ class MasterActivity : AppCompatActivity() {
             })
             add(
                 MultipleImageItem(
-                    ImageUrls.multipleImageUrls,
+                    ImageUrls.urls4,
                     multipleImageListener
                 )
             )
-            addAll(ImageUrls.singleImageUrls.map {
+            addAll(ImageUrls.urls5.map {
                 SingleImageItem(
                     it,
                     singleImageListener
@@ -83,11 +83,11 @@ class MasterActivity : AppCompatActivity() {
             })
             add(
                 MultipleImageItem(
-                    ImageUrls.multipleImageUrls,
+                    ImageUrls.urls1,
                     multipleImageListener
                 )
             )
-            addAll(ImageUrls.singleImageUrls.map {
+            addAll(ImageUrls.urls2.map {
                 SingleImageItem(
                     it,
                     singleImageListener
@@ -95,10 +95,28 @@ class MasterActivity : AppCompatActivity() {
             })
             add(
                 MultipleImageItem(
-                    ImageUrls.multipleImageUrls,
+                    ImageUrls.urls3,
                     multipleImageListener
                 )
             )
+            addAll(ImageUrls.urls4.map {
+                SingleImageItem(
+                    it,
+                    singleImageListener
+                )
+            })
+            add(
+                MultipleImageItem(
+                    ImageUrls.urls5,
+                    multipleImageListener
+                )
+            )
+            addAll(ImageUrls.urls1.map {
+                SingleImageItem(
+                    it,
+                    singleImageListener
+                )
+            })
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this@MasterActivity)
         binding.recyclerView.adapter = adapter

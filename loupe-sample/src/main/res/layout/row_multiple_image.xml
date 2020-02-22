@@ -5,7 +5,9 @@
     >
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingBottom="1dp"
+        >
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -34,6 +36,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/vertical_middle_guide"
                 app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginEnd="1dp"
+                android:layout_marginBottom="1dp"
                 tools:src="@drawable/photo_by_ishan_at_seefromthesky_on_unsplash"
                 />
 
@@ -48,6 +52,8 @@
                 app:layout_constraintStart_toEndOf="@id/vertical_middle_guide"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginStart="1dp"
+                android:layout_marginBottom="1dp"
                 tools:src="@drawable/photo_by_ishan_at_seefromthesky_on_unsplash"
                 />
 
@@ -62,6 +68,8 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/vertical_middle_guide"
                 app:layout_constraintTop_toBottomOf="@id/top_left_image"
+                android:layout_marginEnd="1dp"
+                android:layout_marginTop="1dp"
                 tools:src="@drawable/photo_by_ishan_at_seefromthesky_on_unsplash"
                 />
 
@@ -76,6 +84,8 @@
                 app:layout_constraintStart_toEndOf="@id/vertical_middle_guide"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/top_right_image"
+                android:layout_marginStart="1dp"
+                android:layout_marginTop="1dp"
                 tools:src="@drawable/photo_by_ishan_at_seefromthesky_on_unsplash"
                 />
 
