@@ -10,7 +10,7 @@ object ImageUrls {
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_antonino_visalli_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_ian_dooley_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_ibrahim_rifath_on_unsplash.jpg",
-        "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_isabella_jusková_on_unsplash.jpg",
+        "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_isabella_juskova_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_sergio_souza_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_shifaaz_shamoon_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_tom_barrett_on_unsplash.jpg"
