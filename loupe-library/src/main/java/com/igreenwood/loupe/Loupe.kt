@@ -196,6 +196,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         event ?: return false
 
+        imageView.parent.requestDisallowInterceptTouchEvent(scale != minScale)
+
         imageView.run {
             if (!isEnabled) {
                 return false
