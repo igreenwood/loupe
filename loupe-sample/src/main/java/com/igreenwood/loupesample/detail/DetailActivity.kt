@@ -11,9 +11,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.FrameLayout
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.SharedElementCallback
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.viewpager.widget.PagerAdapter
@@ -27,7 +27,7 @@ import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.databinding.ItemImageBinding
 import com.igreenwood.loupesample.util.Pref
-import timber.log.Timber
+import kotlinx.android.synthetic.main.activity_detail.*
 import kotlin.math.roundToInt
 
 class DetailActivity : AppCompatActivity() {
@@ -45,10 +45,9 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityDetailBinding
-    private val urls: List<String> by lazy { intent.getSerializableExtra(ARGS_IMAGE_URLS) as List<String>}
+    private val urls: List<String> by lazy { intent.getSerializableExtra(ARGS_IMAGE_URLS) as List<String> }
     private val initialPos: Int by lazy { intent.getIntExtra(ARGS_INITIAL_POSITION, 0) }
     private lateinit var adapter: ImageAdapter
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +74,9 @@ class DetailActivity : AppCompatActivity() {
         adapter = ImageAdapter(this, urls)
         binding.viewpager.adapter = adapter
         binding.viewpager.currentItem = initialPos
+        if (Pref.useSharedElements) {
+
+        }
     }
 
     private fun initToolbar() {
@@ -119,14 +121,16 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    inner class ImageAdapter(var context: Context, var urls: List<String>): PagerAdapter() {
+    inner class ImageAdapter(var context: Context, var urls: List<String>) : PagerAdapter() {
 
         private var loupeMap = hashMapOf<Int, Loupe>()
+        private var views = hashMapOf<Int, ImageView>()
 
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val binding = ItemImageBinding.inflate(LayoutInflater.from(context))
             container.addView(binding.root)
             loadImage(binding.image, position)
+            views[position] = binding.image
             return binding.root
         }
 
@@ -164,6 +168,8 @@ class DetailActivity : AppCompatActivity() {
                             dataSource: DataSource?,
                             isFirstResource: Boolean
                         ): Boolean {
+                            image.transitionName =
+                                context.getString(R.string.shared_image_transition, position)
                             val loupe = Loupe(image).apply {
                                 useDismissAnimation = false
                                 onDismissListener = object : Loupe.OnViewTranslateListener {
@@ -185,9 +191,25 @@ class DetailActivity : AppCompatActivity() {
                                     }
                                 }
                             }
+
                             loupeMap[position] = loupe
 
-                            if(position == initialPos){
+                            if (position == initialPos) {
+                                setEnterSharedElementCallback(object : SharedElementCallback() {
+                                    override fun onMapSharedElements(
+                                        names: MutableList<String>?,
+                                        sharedElements: MutableMap<String, View>?
+                                    ) {
+                                        names ?: return
+                                        val view = views[viewpager.currentItem] ?: return
+                                        view.transitionName = context.getString(
+                                            R.string.shared_image_transition,
+                                            viewpager.currentItem
+                                        )
+                                        sharedElements?.clear()
+                                        sharedElements?.put(view.transitionName, view)
+                                    }
+                                })
                                 startPostponedEnterTransition()
                             }
                             return false
@@ -239,7 +261,7 @@ class DetailActivity : AppCompatActivity() {
                             }
                             loupeMap[position] = loupe
 
-                            if(position == initialPos){
+                            if (position == initialPos) {
                                 startPostponedEnterTransition()
                             }
                             return false

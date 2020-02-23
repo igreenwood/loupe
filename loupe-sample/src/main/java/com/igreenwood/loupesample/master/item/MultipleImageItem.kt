@@ -1,17 +1,18 @@
 package com.igreenwood.loupesample.master.item
 
-import android.view.View
+import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.RowMultipleImageBinding
+import com.igreenwood.loupesample.util.Pref
 import com.xwray.groupie.databinding.BindableItem
 
 class MultipleImageItem(var urls: List<String>, var listener: Listener) :
     BindableItem<RowMultipleImageBinding>() {
 
     interface Listener {
-        fun onClick(view: View, urls: List<String>, index: Int)
+        fun onClick(adapterPosition: Int, sharedElement: ImageView, urls: List<String>, index: Int)
     }
 
     override fun getLayout() = R.layout.row_multiple_image
@@ -39,16 +40,41 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
             .into(binding.bottomRightImage)
 
         binding.topLeftImage.setOnClickListener {
-            listener.onClick(it, urls, 0)
+            if (Pref.useSharedElements) {
+                setTransitionName(binding)
+            }
+            listener.onClick(position, binding.topLeftImage, urls, 0)
         }
         binding.topRightImage.setOnClickListener {
-            listener.onClick(it, urls, 1)
+            if (Pref.useSharedElements) {
+                setTransitionName(binding)
+            }
+            listener.onClick(position, binding.topRightImage, urls, 1)
         }
         binding.bottomLeftImage.setOnClickListener {
-            listener.onClick(it, urls, 2)
+            if (Pref.useSharedElements) {
+                setTransitionName(binding)
+            }
+            listener.onClick(position, binding.bottomLeftImage, urls, 2)
         }
         binding.bottomRightImage.setOnClickListener {
-            listener.onClick(it, urls, 3)
+            if (Pref.useSharedElements) {
+                setTransitionName(binding)
+            }
+            listener.onClick(position, binding.bottomRightImage, urls, 3)
+        }
+    }
+
+    private fun setTransitionName(binding: RowMultipleImageBinding) {
+        binding.topLeftImage.transitionName =
+            binding.topLeftImage.context.getString(R.string.shared_image_transition, 0)
+        binding.topRightImage.transitionName =
+            binding.topRightImage.context.getString(R.string.shared_image_transition, 1)
+        binding.bottomLeftImage.transitionName =
+            binding.bottomLeftImage.context.getString(R.string.shared_image_transition, 2)
+        if (Pref.useSharedElements) {
+            binding.bottomRightImage.transitionName =
+                binding.bottomRightImage.context.getString(R.string.shared_image_transition, 3)
         }
     }
 }

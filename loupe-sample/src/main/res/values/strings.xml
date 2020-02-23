@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">loupe</string>
-    <string name="shared_image_transition">shared_image_transition</string>
+    <string name="shared_image_transition">shared_image_transition_%1$d</string>
 </resources>

@@ -2,11 +2,13 @@ package com.igreenwood.loupesample.master
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityOptionsCompat
+import androidx.core.app.SharedElementCallback
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.igreenwood.loupesample.*
+import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityMasterBinding
 import com.igreenwood.loupesample.detail.DetailActivity
 import com.igreenwood.loupesample.master.item.MultipleImageItem
@@ -15,7 +17,6 @@ import com.igreenwood.loupesample.util.ImageUrls
 import com.igreenwood.loupesample.util.Pref
 import com.xwray.groupie.GroupAdapter
 import com.xwray.groupie.GroupieViewHolder
-import timber.log.Timber
 
 class MasterActivity : AppCompatActivity() {
 
@@ -23,21 +24,27 @@ class MasterActivity : AppCompatActivity() {
     private var adapter = GroupAdapter<GroupieViewHolder>()
 
     private val singleImageListener = object : SingleImageItem.Listener {
-        override fun onClick(view: View, url: String) {
-            goToDetail(view, arrayListOf(url), 0)
+        override fun onClick(adapterPosition: Int, sharedElement: ImageView, url: String) {
+            goToDetail(adapterPosition, sharedElement, arrayListOf(url), 0)
         }
     }
 
     private val multipleImageListener = object :
         MultipleImageItem.Listener {
-        override fun onClick(view: View, urls: List<String>, index: Int) {
-            goToDetail(view, ArrayList(urls), index)
+        override fun onClick(
+            adapterPosition: Int,
+            sharedElement: ImageView,
+            urls: List<String>,
+            index: Int
+        ) {
+            goToDetail(adapterPosition, sharedElement, ArrayList(urls), index)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = DataBindingUtil.setContentView(this,
+        binding = DataBindingUtil.setContentView(
+            this,
             R.layout.activity_master
         )
         initToolbar()
@@ -127,7 +134,7 @@ class MasterActivity : AppCompatActivity() {
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
             setHomeButtonEnabled(true)
-            title = if(Pref.useSharedElements){
+            title = if (Pref.useSharedElements) {
                 "shared elements sample"
             } else {
                 "swipe to dismiss sample"
@@ -136,18 +143,52 @@ class MasterActivity : AppCompatActivity() {
     }
 
     private fun getActivityOption(targetView: View): ActivityOptionsCompat {
-        return ActivityOptionsCompat.makeSceneTransitionAnimation(this, targetView, targetView.transitionName)
+        return ActivityOptionsCompat.makeSceneTransitionAnimation(
+            this,
+            targetView,
+            targetView.transitionName
+        )
     }
 
-    private fun goToDetail(view: View, urls: ArrayList<String>, initialPos: Int) {
+    private fun goToDetail(
+        position: Int,
+        sharedElement: ImageView,
+        urls: ArrayList<String>,
+        initialPos: Int
+    ) {
         if (Pref.useSharedElements) {
+            setExitSharedElementCallback(object : SharedElementCallback() {
+                override fun onMapSharedElements(
+                    names: MutableList<String>?,
+                    sharedElements: MutableMap<String, View>?
+                ) {
+                    val transitionName = names?.get(0) ?: return
+                    val ids = listOf(
+                        R.id.image,
+                        R.id.top_left_image,
+                        R.id.top_right_image,
+                        R.id.bottom_left_image,
+                        R.id.bottom_right_image
+                    )
+                    val views = mutableListOf<ImageView>()
+                    ids.forEach {
+                        val view =
+                            binding.recyclerView.layoutManager?.findViewByPosition(position)?.findViewById<ImageView>(
+                                it
+                            ) ?: return@forEach
+                        views.add(view)
+                    }
+                    val view = views.find { transitionName == it.transitionName } ?: return
+                    sharedElements?.put(transitionName, view)
+                }
+            })
             startActivity(
                 DetailActivity.createIntent(
                     this@MasterActivity,
                     urls,
                     initialPos
                 ),
-                getActivityOption(view).toBundle()
+                getActivityOption(sharedElement).toBundle()
             )
         } else {
             startActivity(
