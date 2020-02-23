@@ -24,14 +24,14 @@ class MasterActivity : AppCompatActivity() {
 
     private val singleImageListener = object : SingleImageItem.Listener {
         override fun onClick(view: View, url: String) {
-            goToDetail(view, url)
+            goToDetail(view, arrayListOf(url), 0)
         }
     }
 
     private val multipleImageListener = object :
         MultipleImageItem.Listener {
         override fun onClick(view: View, urls: List<String>, index: Int) {
-            goToDetail(view, urls[index])
+            goToDetail(view, ArrayList(urls), index)
         }
     }
 
@@ -139,12 +139,13 @@ class MasterActivity : AppCompatActivity() {
         return ActivityOptionsCompat.makeSceneTransitionAnimation(this, targetView, targetView.transitionName)
     }
 
-    private fun goToDetail(view: View, url: String) {
+    private fun goToDetail(view: View, urls: ArrayList<String>, initialPos: Int) {
         if (Pref.useSharedElements) {
             startActivity(
                 DetailActivity.createIntent(
                     this@MasterActivity,
-                    url
+                    urls,
+                    initialPos
                 ),
                 getActivityOption(view).toBundle()
             )
@@ -152,7 +153,8 @@ class MasterActivity : AppCompatActivity() {
             startActivity(
                 DetailActivity.createIntent(
                     this@MasterActivity,
-                    url
+                    urls,
+                    initialPos
                 )
             )
             overridePendingTransition(R.anim.fade_in_fast, 0)
