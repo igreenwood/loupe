@@ -40,28 +40,26 @@ class MultipleImageItem(var urls: List<String>, var listener: Listener) :
             .into(binding.bottomRightImage)
 
         binding.topLeftImage.setOnClickListener {
-            if (Pref.useSharedElements) {
-                setTransitionName(binding)
-            }
+            setTransitionNameIfNeeded(binding)
             listener.onClick(position, binding.topLeftImage, urls, 0)
         }
         binding.topRightImage.setOnClickListener {
-            if (Pref.useSharedElements) {
-                setTransitionName(binding)
-            }
+            setTransitionNameIfNeeded(binding)
             listener.onClick(position, binding.topRightImage, urls, 1)
         }
         binding.bottomLeftImage.setOnClickListener {
-            if (Pref.useSharedElements) {
-                setTransitionName(binding)
-            }
+            setTransitionNameIfNeeded(binding)
             listener.onClick(position, binding.bottomLeftImage, urls, 2)
         }
         binding.bottomRightImage.setOnClickListener {
-            if (Pref.useSharedElements) {
-                setTransitionName(binding)
-            }
+            setTransitionNameIfNeeded(binding)
             listener.onClick(position, binding.bottomRightImage, urls, 3)
+        }
+    }
+
+    private fun setTransitionNameIfNeeded(binding: RowMultipleImageBinding){
+        if (Pref.useSharedElements) {
+            setTransitionName(binding)
         }
     }
 

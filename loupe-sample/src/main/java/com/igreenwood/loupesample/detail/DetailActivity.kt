@@ -71,12 +71,14 @@ class DetailActivity : AppCompatActivity() {
                 R.color.black_alpha_87
             )
         )
+
+        initViewPager()
+    }
+
+    private fun initViewPager() {
         adapter = ImageAdapter(this, urls)
         binding.viewpager.adapter = adapter
         binding.viewpager.currentItem = initialPos
-        if (Pref.useSharedElements) {
-
-        }
     }
 
     private fun initToolbar() {
@@ -88,21 +90,10 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeBackgroundAlpha(amount: Float) {
-        val newAlpha = ((1.0f - amount) * 255).roundToInt()
-        binding.root.background.alpha = newAlpha
-    }
-
     private fun showToolbar() {
         binding.toolbar.animate()
             .setInterpolator(AccelerateDecelerateInterpolator())
             .translationY(0f)
-    }
-
-    private fun hideToolbar() {
-        binding.toolbar.animate()
-            .setInterpolator(AccelerateDecelerateInterpolator())
-            .translationY(-binding.toolbar.height.toFloat())
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -119,6 +110,17 @@ class DetailActivity : AppCompatActivity() {
         if (!Pref.useSharedElements) {
             overridePendingTransition(0, R.anim.fade_out_fast)
         }
+    }
+
+    private fun changeBackgroundAlpha(amount: Float) {
+        val newAlpha = ((1.0f - amount) * 255).roundToInt()
+        binding.root.background.alpha = newAlpha
+    }
+
+    private fun hideToolbar() {
+        binding.toolbar.animate()
+            .setInterpolator(AccelerateDecelerateInterpolator())
+            .translationY(-binding.toolbar.height.toFloat())
     }
 
     inner class ImageAdapter(var context: Context, var urls: List<String>) : PagerAdapter() {
@@ -259,8 +261,8 @@ class DetailActivity : AppCompatActivity() {
                                     }
                                 }
                             }
-                            loupeMap[position] = loupe
 
+                            loupeMap[position] = loupe
                             if (position == initialPos) {
                                 startPostponedEnterTransition()
                             }
