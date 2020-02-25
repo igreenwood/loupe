@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">loupe</string>
     <string name="shared_image_transition">shared_image_transition_%1$d</string>
+    <string name="max_zoom">Max Zoom : %1$f</string>
+    <string name="fling_animation_duration">Fling Animation Duration : %1$d</string>
+    <string name="scale_animation_duration">Scale Animation Duration : %1$d</string>
+    <string name="over_scale_animation_duration">Over Scale Animation Duration : %1$d</string>
+    <string name="over_scroll_animation_duration">Over Scroll Animation Duration : %1$d</string>
+    <string name="dismiss_animation_duration">Dismiss Animation Duration : %1$d</string>
+    <string name="restore_animation_duration">Restore Animation Duration : %1$d</string>
+    <string name="view_drag_friction">View Drag Friction : %1$f</string>
 </resources>

@@ -13,24 +13,173 @@
             android:background="@color/colorPrimary"
             />
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="@dimen/spacing"
+            android:layout_height="wrap_content"
             >
-            <Button
-                android:id="@+id/swipe_down_sample_button"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Open Swipe to dismiss sample" />
+                android:paddingStart="@dimen/spacing"
+                android:paddingEnd="@dimen/spacing"
+                >
 
-            <Button
-                android:id="@+id/shared_element_sample_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Open SharedElements sample" />
-        </LinearLayout>
+                <TextView
+                    android:text="Sample Setting"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorAccent"
+                    android:paddingTop="@dimen/spacing_large"
+                    android:paddingBottom="@dimen/spacing"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Switch
+                    android:id="@+id/use_shared_elements_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Use Shared Elements Transition"
+                    />
+
+                <TextView
+                    android:text="Loupe Settings"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorAccent"
+                    android:paddingTop="@dimen/spacing_large"
+                    android:paddingBottom="@dimen/spacing"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/max_zoom_text_view"
+                    android:text="@string/max_zoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/max_zoom_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/fling_duration_text_view"
+                    android:text="@string/fling_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/fling_duration_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/scale_duration_text_view"
+                    android:text="@string/scale_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/scale_duration_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/over_scale_duration_text_view"
+                    android:text="@string/over_scale_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/over_scale_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/over_scroll_duration_text_view"
+                    android:text="@string/over_scroll_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/over_scroll_duration_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/dismiss_duration_text_view"
+                    android:text="@string/dismiss_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/dismiss_duration_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/restore_duration_text_view"
+                    android:text="@string/restore_animation_duration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/restore_duration_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/spacing"/>
+
+                <TextView
+                    android:id="@+id/view_drag_friction_text_view"
+                    android:text="@string/view_drag_friction"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <SeekBar
+                    android:id="@+id/view_drag_friction_seek_bar"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+            </LinearLayout>
+        </ScrollView>
 
     </LinearLayout>
 </layout>

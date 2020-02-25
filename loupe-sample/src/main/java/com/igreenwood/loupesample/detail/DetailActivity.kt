@@ -173,7 +173,17 @@ class DetailActivity : AppCompatActivity() {
                             image.transitionName =
                                 context.getString(R.string.shared_image_transition, position)
                             val loupe = Loupe(image).apply {
-                                useDismissAnimation = false
+
+                                useDismissAnimation = !Pref.useSharedElements
+                                maxZoom = Pref.maxZoom
+                                flingAnimationDuration = Pref.flingAnimationDuration
+                                scaleAnimationDuration = Pref.scaleAnimationDuration
+                                overScaleAnimationDuration = Pref.overScaleAnimationDuration
+                                overScrollAnimationDuration = Pref.overScrollAnimationDuration
+                                dismissAnimationDuration = Pref.dismissAnimationDuration
+                                restoreAnimationDuration = Pref.restoreAnimationDuration
+                                viewDragFriction = Pref.viewDragFriction
+
                                 onDismissListener = object : Loupe.OnViewTranslateListener {
 
                                     override fun onStart(view: ImageView) {

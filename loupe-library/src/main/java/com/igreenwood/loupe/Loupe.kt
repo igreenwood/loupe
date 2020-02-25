@@ -14,6 +14,7 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
+import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -22,7 +23,7 @@ import kotlin.math.roundToInt
 class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChangeListener {
 
     companion object {
-        const val DEFAULT_MAX_ZOOM = 10.0f
+        const val DEFAULT_MAX_ZOOM = 5.0f
         const val DEFAULT_ANIM_DURATION = 250L
         const val DEFAULT_VIEW_DRAG_FRICTION = 1f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.25f
@@ -225,6 +226,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         event ?: return false
+        Timber.e("minScale = ${minScale}, scale = $scale, maxZoom = $maxZoom")
 
         imageView.parent.requestDisallowInterceptTouchEvent(scale != minScale)
 
