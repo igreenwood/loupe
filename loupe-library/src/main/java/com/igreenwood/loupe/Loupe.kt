@@ -14,7 +14,6 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -226,7 +225,6 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         event ?: return false
-        Timber.e("minScale = ${minScale}, scale = $scale, maxZoom = $maxZoom")
 
         imageView.parent.requestDisallowInterceptTouchEvent(scale != minScale)
 

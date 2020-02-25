@@ -43,5 +43,4 @@ dependencies {
     implementation 'com.xwray:groupie:2.7.0'
     implementation 'com.xwray:groupie-databinding:2.7.0'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'com.chibatching.kotpref:kotpref:2.10.0'
 }
