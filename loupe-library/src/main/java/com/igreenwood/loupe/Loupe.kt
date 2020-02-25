@@ -27,6 +27,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         const val DEFAULT_VIEW_DRAG_FRICTION = 1f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.25f
         const val DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP = 96
+        val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
     }
 
     interface OnViewTranslateListener {
@@ -47,9 +48,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     // duration millis for image animation
     var flingAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for double tap scaling animation
-    var doupleTapScalingAnimationDuration = DEFAULT_ANIM_DURATION
+    var doubleTapScaleAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for over scaling animation
-    var overScalingAnimationDuration = DEFAULT_ANIM_DURATION
+    var overScaleAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for over scrolling animation
     var overScrollAnimationDuration = DEFAULT_ANIM_DURATION
     // view drag friction for swipe to dismiss(1f : drag distance == view move distance. Smaller value, view is moving more slower)
@@ -60,6 +61,18 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     var flingDismissActionThresholdInDp = DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP
     // dismiss action listener
     var onDismissListener: OnViewTranslateListener? = null
+
+    var dismissAnimationInterpolator = DEFAULT_INTERPOLATOR
+
+    var restoreAnimationInterpolator = DEFAULT_INTERPOLATOR
+
+    var flingAnimationInterpolator = DEFAULT_INTERPOLATOR
+
+    var doubleTapScaleAnimationInterpolator = DEFAULT_INTERPOLATOR
+
+    var overScaleAnimationInterpolator = DEFAULT_INTERPOLATOR
+
+    var overScrollAnimationInterpolator = DEFAULT_INTERPOLATOR
 
     // bitmap matrix
     private var transfrom = Matrix()
@@ -290,7 +303,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
             animate()
                 .setDuration(dismissAnimationDuration)
-                .setInterpolator(AccelerateDecelerateInterpolator())
+                .setInterpolator(dismissAnimationInterpolator)
                 .translationY(translationY.toFloat())
                 .setUpdateListener {
                     onDismissListener?.onViewTranslate(imageView, calcTranslationAmount())
@@ -344,7 +357,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = flingAnimationDuration
-            interpolator = DecelerateInterpolator()
+            interpolator = flingAnimationInterpolator
             addUpdateListener {
                 val amount = it.animatedValue as Float
                 val newLeft = lerp(amount, fromX, toX)
@@ -395,8 +408,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         val focalX = e.x
         val focalY = e.y
         ValueAnimator.ofFloat(startScale, endScale).apply {
-            duration = doupleTapScalingAnimationDuration
-            interpolator = DecelerateInterpolator()
+            duration = doubleTapScaleAnimationDuration
+            interpolator = doubleTapScaleAnimationInterpolator
             addUpdateListener {
                 zoom(it.animatedValue as Float, focalX, focalY)
                 ViewCompat.postInvalidateOnAnimation(imageView)
@@ -435,11 +448,15 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         val endTop = canvasBounds.centerY() - imageHeight * minScale * 0.5f
         ValueAnimator.ofFloat(0f, 1f).apply {
             duration = if (isOverScaling) {
-                overScalingAnimationDuration
+                overScaleAnimationDuration
             } else {
-                doupleTapScalingAnimationDuration
+                doubleTapScaleAnimationDuration
             }
-            interpolator = DecelerateInterpolator()
+            interpolator = if(isOverScaling) {
+                overScaleAnimationInterpolator
+            } else {
+                doubleTapScaleAnimationInterpolator
+            }
             addUpdateListener {
                 val value = it.animatedValue as Float
                 scale = lerp(value, startScale, endScale)
@@ -519,7 +536,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         imageView.run {
             animate()
                 .setDuration(restoreAnimationDuration)
-                .setInterpolator(AccelerateDecelerateInterpolator())
+                .setInterpolator(restoreAnimationInterpolator)
                 .translationY((originalViewBounds.top - top).toFloat())
                 .setUpdateListener {
                     onDismissListener?.onViewTranslate(this, calcTranslationAmount())
@@ -684,7 +701,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
             ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = overScrollAnimationDuration
-                interpolator = DecelerateInterpolator()
+                interpolator = overScrollAnimationInterpolator
                 addUpdateListener {
                     val amount = it.animatedValue as Float
                     val newLeft = lerp(amount, start.left, end.left)
