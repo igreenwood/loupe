@@ -47,9 +47,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     var restoreAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for image animation
     var flingAnimationDuration = DEFAULT_ANIM_DURATION
-    // duration millis for double tap scaling animation
-    var doubleTapScaleAnimationDuration = DEFAULT_ANIM_DURATION
-    // duration millis for over scaling animation
+    // duration millis for double tap scale animation
+    var scaleAnimationDuration = DEFAULT_ANIM_DURATION
+    // duration millis for over scale animation
     var overScaleAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for over scrolling animation
     var overScrollAnimationDuration = DEFAULT_ANIM_DURATION
@@ -408,7 +408,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         val focalX = e.x
         val focalY = e.y
         ValueAnimator.ofFloat(startScale, endScale).apply {
-            duration = doubleTapScaleAnimationDuration
+            duration = scaleAnimationDuration
             interpolator = doubleTapScaleAnimationInterpolator
             addUpdateListener {
                 zoom(it.animatedValue as Float, focalX, focalY)
@@ -450,7 +450,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             duration = if (isOverScaling) {
                 overScaleAnimationDuration
             } else {
-                doubleTapScaleAnimationDuration
+                scaleAnimationDuration
             }
             interpolator = if(isOverScaling) {
                 overScaleAnimationInterpolator
