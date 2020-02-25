@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
@@ -55,13 +56,22 @@ class MainActivity : AppCompatActivity() {
             isChecked = Pref.useSharedElements
             setOnCheckedChangeListener { _, checked ->
                 Pref.useSharedElements = checked
+                binding.dismissAnimationSettings.visibility = if(checked){
+                    View.GONE
+                } else {
+                    View.VISIBLE
+                }
             }
         }
+        val progressMin = 0f
+        val progressMax = 100f
+        val zoomMin = 1.5f
+        val zoomMax = 8f
         binding.maxZoomSeekBar.apply {
-            progress = map(Pref.maxZoom, 1.5f, 8f, 0f, 100f).roundToInt()
+            progress = map(Pref.maxZoom, zoomMin, zoomMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 1.5f, 8f)
+                    val value = map(progress.toFloat(), progressMin, progressMax, zoomMin, zoomMax)
                     binding.maxZoomTextView.text = getString(R.string.max_zoom, value)
                     Pref.maxZoom = value
                 }
@@ -71,12 +81,14 @@ class MainActivity : AppCompatActivity() {
             })
         }
         binding.maxZoomTextView.text = getString(R.string.max_zoom, Pref.maxZoom)
+        val durationMin = 100f
+        val durationMax = 3000f
         binding.flingDurationSeekBar.apply {
             progress =
-                map(Pref.flingAnimationDuration.toFloat(), 100f, 1000f, 0f, 100f).roundToInt()
+                map(Pref.flingAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 1000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.flingDurationTextView.text =
                         getString(R.string.fling_animation_duration, value)
                     Pref.flingAnimationDuration = value
@@ -89,10 +101,10 @@ class MainActivity : AppCompatActivity() {
         binding.flingDurationTextView.text = getString(R.string.fling_animation_duration, Pref.flingAnimationDuration)
         binding.scaleDurationSeekBar.apply {
             progress =
-                map(Pref.scaleAnimationDuration.toFloat(), 100f, 2000f, 0f, 100f).roundToInt()
+                map(Pref.scaleAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 2000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.scaleDurationTextView.text =
                         getString(R.string.scale_animation_duration, value)
                     Pref.scaleAnimationDuration = value
@@ -105,10 +117,10 @@ class MainActivity : AppCompatActivity() {
         binding.scaleDurationTextView.text = getString(R.string.scale_animation_duration, Pref.scaleAnimationDuration)
         binding.overScaleSeekBar.apply {
             progress =
-                map(Pref.overScaleAnimationDuration.toFloat(), 100f, 1000f, 0f, 100f).roundToInt()
+                map(Pref.overScaleAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 1000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.overScaleDurationTextView.text =
                         getString(R.string.over_scale_animation_duration, value)
                     Pref.overScaleAnimationDuration = value
@@ -118,13 +130,13 @@ class MainActivity : AppCompatActivity() {
                 override fun onStopTrackingTouch(p0: SeekBar?) {}
             })
         }
-        binding.overScaleDurationTextView.text = getString(R.string.scale_animation_duration, Pref.overScaleAnimationDuration)
+        binding.overScaleDurationTextView.text = getString(R.string.over_scale_animation_duration, Pref.overScaleAnimationDuration)
         binding.overScrollDurationSeekBar.apply {
             progress =
-                map(Pref.overScrollAnimationDuration.toFloat(), 100f, 1000f, 0f, 100f).roundToInt()
+                map(Pref.overScrollAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 1000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.overScrollDurationTextView.text =
                         getString(R.string.over_scroll_animation_duration, value)
                     Pref.overScrollAnimationDuration = value
@@ -137,10 +149,10 @@ class MainActivity : AppCompatActivity() {
         binding.overScrollDurationTextView.text = getString(R.string.over_scroll_animation_duration, Pref.overScrollAnimationDuration)
         binding.dismissDurationSeekBar.apply {
             progress =
-                map(Pref.dismissAnimationDuration.toFloat(), 100f, 1000f, 0f, 100f).roundToInt()
+                map(Pref.dismissAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 1000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.dismissDurationTextView.text =
                         getString(R.string.dismiss_animation_duration, value)
                     Pref.dismissAnimationDuration = value
@@ -153,10 +165,10 @@ class MainActivity : AppCompatActivity() {
         binding.dismissDurationTextView.text = getString(R.string.dismiss_animation_duration, Pref.dismissAnimationDuration)
         binding.restoreDurationSeekBar.apply {
             progress =
-                map(Pref.restoreAnimationDuration.toFloat(), 100f, 1000f, 0f, 100f).roundToInt()
+                map(Pref.restoreAnimationDuration.toFloat(), durationMin, durationMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 100f, 1000f).toLong()
+                    val value = map(progress.toFloat(), progressMin, progressMax, durationMin, durationMax).toLong()
                     binding.restoreDurationTextView.text =
                         getString(R.string.restore_animation_duration, value)
                     Pref.restoreAnimationDuration = value
@@ -167,11 +179,13 @@ class MainActivity : AppCompatActivity() {
             })
         }
         binding.restoreDurationTextView.text = getString(R.string.restore_animation_duration, Pref.restoreAnimationDuration)
+        val frictionMin = 0.1f
+        val frictionMax = 1.0f
         binding.viewDragFrictionSeekBar.apply {
-            progress = map(Pref.viewDragFriction, 0.1f, 1.5f, 0f, 100f).roundToInt()
+            progress = map(Pref.viewDragFriction, frictionMin, frictionMax, progressMin, progressMax).roundToInt()
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    val value = map(progress.toFloat(), 0f, 100f, 0.1f, 1.5f)
+                    val value = map(progress.toFloat(), progressMin, progressMax, frictionMin, frictionMax)
                     binding.viewDragFrictionTextView.text =
                         getString(R.string.view_drag_friction, value)
                     Pref.viewDragFriction = value
