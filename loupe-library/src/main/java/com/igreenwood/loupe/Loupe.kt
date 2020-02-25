@@ -256,7 +256,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                             constrainBitmapBounds(true)
                         }
                         else -> {
-                            jumpToMinimumScale()
+                            jumpToMinimumScale(true)
                         }
                     }
                 }
