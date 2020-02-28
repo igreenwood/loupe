@@ -1,5 +1,15 @@
+apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+
+publish {
+    userOrg = 'isseiaoki'
+    groupId = 'com.igreenwood'
+    artifactId = 'loupe'
+    publishVersion = '0.1.0'
+    desc = 'ImageView Helper for Android that supports zooming and swipe-to-dismiss action.'
+    website = 'https://github.com/igreenwood/loupe'
+}
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -16,9 +26,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.core:core-ktx:1.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation 'com.jakewharton.timber:timber:4.7.1'
 }
