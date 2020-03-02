@@ -1,13 +1,23 @@
 [logo](logo-url)
 
 ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
-Source code is written with full Kotlin. Supported on API Level 21 and above.
+Source code is written with Kotlin. 
 
 [preview](preview-url)
 
-loupe provides modern image viewer ui with simple code.
+Loupe provides modern image viewer ui with super simple code.
 
-You can add Twitter-like image viewer that supports swipe-to-dismiss action.
+You can implement the Twitter-like image viewer in 10 minutes.
+
+## Download
+Loupe is available on `jCenter()`
+```groovy
+dependencies {
+  implementation 'com.igreenwood:loupe:0.3.0'
+}
+```
+
+## Quick Start
 
 In your Activity, add the following code. (It is also working with Fragments.)
 ```kotlin
@@ -37,13 +47,6 @@ That's all. Now your ImageView supports zooming and swipe-to-dismiss action :smi
 
 [zooming-preview](zooming-preview-url)
 [dismissing-preview](dismissing-preview-url)
-
-## Download
-```groovy
-dependencies {
-  implementation 'com.igreenwood:loupe:0.3.0'
-}
-```
 
 ## Two type dismiss action
 
@@ -106,8 +109,8 @@ val loupe = Loupe(imageView).apply {
 ```
 For more details, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
 
-## Using with image loader libraries.
-loupe is just a touch helper of the ImageView.
+## Using Loupe with image loader libraries.
+Loupe is just a helper of the ImageView.
 You can use loupe with any image loader libraries.
 If you use with the image loader library, it would be better that initialize `Loupe` after the image loading has finished.
 With Glide, something like this.
@@ -178,6 +181,16 @@ Loupe(image).apply {
 }
 ```
 You can try parameters with [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
+
+## Requirements
+Supported on API Level 21 and above.
+
+## Proguard
+```
+-dontwarn com.igreenwood.loupe**
+-keep class com.igreenwood.loupe** { *; }
+-keep interface com.igreenwood.loupe** { *; }
+```
 
 ## Developed By
 Issei Aoki - <i.greenwood.dev@gmail.com>
