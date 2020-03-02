@@ -1,5 +1,6 @@
 package com.igreenwood.loupesample.detail
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -45,10 +46,12 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityDetailBinding
+    @Suppress("UNCHECKED_CAST")
     private val urls: List<String> by lazy { intent.getSerializableExtra(ARGS_IMAGE_URLS) as List<String> }
     private val initialPos: Int by lazy { intent.getIntExtra(ARGS_INITIAL_POSITION, 0) }
     private lateinit var adapter: ImageAdapter
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -214,9 +217,10 @@ class DetailActivity : AppCompatActivity() {
                                     ) {
                                         names ?: return
                                         val view = views[viewpager.currentItem] ?: return
+                                        val currentPosition: Int = viewpager.currentItem
                                         view.transitionName = context.getString(
                                             R.string.shared_image_transition,
-                                            viewpager.currentItem
+                                            currentPosition
                                         )
                                         sharedElements?.clear()
                                         sharedElements?.put(view.transitionName, view)
