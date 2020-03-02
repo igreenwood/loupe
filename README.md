@@ -45,6 +45,36 @@ dependencies {
 }
 ```
 
+## Two type dismiss action
+
+- Fling dismiss animation
+The default dismiss animation is vertical fling animation.
+
+[fling-dismiss-animation](fling-dismiss-animation-url)
+
+- Use SharedElemtns Transition
+You can use Shared Elements Transition.
+
+[shared-elements-transition-animatijon](shared-elements-transition-animation-url)
+
+If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
+
+```kotlin
+val loupe = Loupe(imageView).apply {
+  useDismissAnimation = false
+  onDismissListener = object : Loupe.OnViewTranslateListener {
+
+    override fun onStart(view: ImageView) {}
+
+    override fun onViewTranslate(view: ImageView, amount: Float) {}
+
+    override fun onRestore(view: ImageView) {}
+
+    override fun onDismiss(view: ImageView) {}
+  }
+}
+```
+
 ## OnViewTranslateListener
 If you want to do some action while dimissing ImageView, use `OnViewTranslateListener`.
 
@@ -76,11 +106,11 @@ val loupe = Loupe(imageView).apply {
 ```
 For more details, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
 
-## Using with some image loader libraries.
+## Using with image loader libraries.
 loupe is just a touch helper of the ImageView.
-You can use any image loader libraries.
-If you use with some libraries, it would be better that initialize `Loupe` after the image loading has finished.
-with Glide, something like this.
+You can use loupe with any image loader libraries.
+If you use with the image loader library, it would be better that initialize `Loupe` after the image loading has finished.
+With Glide, something like this.
 
 ```kotlin
 Glide.with(imageView.context).load(url)
@@ -119,38 +149,7 @@ Glide.with(imageView.context).load(url)
 ).into(imageView)
 ```
 
-## Two type dismiss action
-
-- Fling dismiss animation
-The default dismiss animation is vertical fling animation.
-
-[fling-dismiss-animation](fling-dismiss-animation-url)
-
-- Use SharedElemtns Transition
-You can use Shared Elements Transition.
-
-[shared-elements-transition-animatijon](shared-elements-transition-animation-url)
-
-If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
-
-```kotlin
-val loupe = Loupe(imageView).apply {
-  useDismissAnimation = false
-  onDismissListener = object : Loupe.OnViewTranslateListener {
-
-    override fun onStart(view: ImageView) {}
-
-    override fun onViewTranslate(view: ImageView, amount: Float) {}
-
-    override fun onRestore(view: ImageView) {}
-
-    override fun onDismiss(view: ImageView) {}
-  }
-}
-```
-
 ## Customization
-
 Here is the customizable parameters.
 
 ### Customizable parameters
