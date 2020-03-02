@@ -59,8 +59,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     var dragDismissDistanceInViewHeightRatio = DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO
     // fling threshold for dismiss action(If the user fling the view and the view drag distance is smaller than threshold, fling dismiss action will be triggered)
     var flingDismissActionThresholdInDp = DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP
-    // dismiss action listener
-    var onDismissListener: OnViewTranslateListener? = null
+    // on view translate listener
+    var onViewTranslateListener: OnViewTranslateListener? = null
 
     var dismissAnimationInterpolator = DEFAULT_INTERPOLATOR
 
@@ -201,7 +201,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         if (useDismissAnimation) {
             startDismissWithFling(velocityY)
         } else {
-            onDismissListener?.onDismiss(imageView)
+            onViewTranslateListener?.onDismiss(imageView)
         }
     }
 
@@ -306,7 +306,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(dismissAnimationInterpolator)
                 .translationY(translationY.toFloat())
                 .setUpdateListener {
-                    onDismissListener?.onViewTranslate(imageView, calcTranslationAmount())
+                    onViewTranslateListener?.onViewTranslate(imageView, calcTranslationAmount())
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
@@ -315,7 +315,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
                     override fun onAnimationEnd(p0: Animator?) {
                         isDismissing = false
-                        onDismissListener?.onDismiss(imageView)
+                        onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
@@ -503,14 +503,14 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }
 
         if (imageView.y == initialY) {
-            onDismissListener?.onStart(imageView)
+            onViewTranslateListener?.onStart(imageView)
         }
 
         val distY = (lastDistY + distanceY) / 2f
         lastDistY = distanceY
 
         imageView.y -= distY * viewDragFriction // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        onDismissListener?.onViewTranslate(imageView, calcTranslationAmount())
+        onViewTranslateListener?.onViewTranslate(imageView, calcTranslationAmount())
     }
 
     private fun dismissOrRestoreIfNeeded() {
@@ -525,7 +525,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             if (useDismissAnimation) {
                 startDismissWithDrag()
             } else {
-                onDismissListener?.onDismiss(imageView)
+                onViewTranslateListener?.onDismiss(imageView)
             }
         } else {
             restoreViewTransform()
@@ -539,7 +539,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(restoreAnimationInterpolator)
                 .translationY((originalViewBounds.top - top).toFloat())
                 .setUpdateListener {
-                    onDismissListener?.onViewTranslate(this, calcTranslationAmount())
+                    onViewTranslateListener?.onViewTranslate(this, calcTranslationAmount())
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
@@ -547,7 +547,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
-                        onDismissListener?.onRestore(imageView)
+                        onViewTranslateListener?.onRestore(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
@@ -573,7 +573,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(AccelerateDecelerateInterpolator())
                 .translationY(translationY.toFloat())
                 .setUpdateListener {
-                    onDismissListener?.onViewTranslate(this, calcTranslationAmount())
+                    onViewTranslateListener?.onViewTranslate(this, calcTranslationAmount())
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
@@ -582,7 +582,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
                     override fun onAnimationEnd(p0: Animator?) {
                         isDismissing = false
-                        onDismissListener?.onDismiss(imageView)
+                        onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
