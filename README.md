@@ -1,7 +1,7 @@
 [logo](logo-url)
 
 ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
-Source code is written with Kotlin. 
+Loupe is written with Kotlin. 
 
 [preview](preview-url)
 
@@ -13,7 +13,7 @@ You can implement the Twitter-like image viewer in 10 minutes.
 Loupe is available on `jCenter()`
 ```groovy
 dependencies {
-  implementation 'com.igreenwood:loupe:0.3.0'
+  implementation 'com.igreenwood:loupe:0.4.0'
 }
 ```
 
@@ -23,7 +23,7 @@ In your Activity, add the following code. (It is also working with Fragments.)
 ```kotlin
 val imageView: ImageView // normal ImageView
 val loupe = Loupe(imageView).apply {
-  onDismissListener = object : Loupe.OnViewTranslateListener {
+  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {
       
@@ -65,7 +65,7 @@ If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
 ```kotlin
 val loupe = Loupe(imageView).apply {
   useDismissAnimation = false
-  onDismissListener = object : Loupe.OnViewTranslateListener {
+  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {}
 
@@ -83,7 +83,7 @@ If you want to do some action while dimissing ImageView, use `OnViewTranslateLis
 
 ```kotlin
 val loupe = Loupe(imageView).apply {
-  onDismissListener = object : Loupe.OnViewTranslateListener {
+  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {
       // called when the user start swiping down/up the view.
@@ -136,7 +136,7 @@ Glide.with(imageView.context).load(url)
       ): Boolean {
         val loupe = Loupe(image).apply {
 
-            onDismissListener = object : Loupe.OnViewTranslateListener {
+            onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
             override fun onStart(view: ImageView) {}
 
@@ -158,17 +158,25 @@ Here is the customizable parameters.
 ### Customizable parameters
 ```kotlin
 Loupe(image).apply {
-  useDismissAnimation = !Pref.useSharedElements
-  maxZoom = Pref.maxZoom
-  flingAnimationDuration = Pref.flingAnimationDuration
-  scaleAnimationDuration = Pref.scaleAnimationDuration
-  overScaleAnimationDuration = Pref.overScaleAnimationDuration
-  overScrollAnimationDuration = Pref.overScrollAnimationDuration
-  dismissAnimationDuration = Pref.dismissAnimationDuration
-  restoreAnimationDuration = Pref.restoreAnimationDuration
-  viewDragFriction = Pref.viewDragFriction
+  useDismissAnimation = true // If you use shared elements transition, set false
+  maxZoom = 8f
+  dismissAnimationDuration = 250L // duration millis for dismiss animation
+  restoreAnimationDuration = 250L // duration millis for restore animation
+  flingAnimationDuration = 250L // duration millis for image fling animation
+  scaleAnimationDuration = 250L // duration millis for double tap scale animation
+  overScaleAnimationDuration = 250L // duration millis for over scale animation
+  overScrollAnimationDuration = 250L // duration millis for over scrolling animation
+  viewDragFriction = 1f // view drag friction for swipe to dismiss(1f : drag distance == view move distance. Smaller value, view is moving more slower)
+  dragDismissDistanceInViewHeightRatio = 0.3f // distance threshold for swipe to dismiss(If the view drag distance is bigger than threshold, view will be dismissed. Otherwise view position will be restored to initial position.)
+  flingDismissActionThresholdInDp = 48 // fling threshold for dismiss action(If the user fling the view and the view drag distance is smaller than threshold, fling dismiss action will be triggered)
+  dismissAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
+  restoreAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
+  flingAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
+  doubleTapScaleAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
+  overScaleAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
+  overScrollAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
 
-  onDismissListener = object : Loupe.OnViewTranslateListener {
+  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {}
 
