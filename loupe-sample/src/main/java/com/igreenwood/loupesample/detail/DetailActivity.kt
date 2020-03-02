@@ -187,7 +187,7 @@ class DetailActivity : AppCompatActivity() {
                                 restoreAnimationDuration = Pref.restoreAnimationDuration
                                 viewDragFriction = Pref.viewDragFriction
 
-                                onDismissListener = object : Loupe.OnViewTranslateListener {
+                                onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
                                     override fun onStart(view: ImageView) {
                                         hideToolbar()
@@ -267,7 +267,7 @@ class DetailActivity : AppCompatActivity() {
                                 restoreAnimationDuration = Pref.restoreAnimationDuration
                                 viewDragFriction = Pref.viewDragFriction
 
-                                onDismissListener = object : Loupe.OnViewTranslateListener {
+                                onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
                                     override fun onStart(view: ImageView) {
                                         hideToolbar()

@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         supportActionBar?.apply {
             setLogo(R.drawable.logo)
-            title = "loupe"
+            title = "LOUPE"
         }
     }
 
