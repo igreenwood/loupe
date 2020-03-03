@@ -9,7 +9,7 @@ Loupe provides modern image viewer ui with super simple code.
 
 You can implement the Twitter-like image viewer in 10 minutes.
 
-<img src="art/preview.gif">
+<img src="art/preview-zooming.gif"><img src="art/preview-dismiss-animation.gif"><img src="art/preview-shared-elements.gif">
 
 ## Download
 Loupe is available on `jCenter()`
