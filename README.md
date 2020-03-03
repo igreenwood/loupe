@@ -3,7 +3,7 @@
 Loupe is a ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
 Loupe is written with Kotlin.
 
-<img src="art/logo.png">
+<img src="art/logo.png" height="200">
 
 Loupe provides modern image viewer ui with super simple code.
 
@@ -47,19 +47,9 @@ val loupe = Loupe(imageView).apply {
 ```
 That's all. Now your ImageView supports zooming and swipe-to-dismiss action :smile:
 
-## Two type dismiss action
+## Dismiss Animation
 
-Loupe supports two type dismiss action.
-
-### Dismiss Animation
-The default dismiss animation is vertical fling animation.
-
-<img src="art/dismiss-animation.gif">
-
-### Shared Elements Transition
-You can use Shared Elements Transition.
-
-<img src="art/shared-elements-transition.gif">
+In default, Loupe uses vertical translate animation on dismissing the ImageView.
 
 If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
 
@@ -78,6 +68,10 @@ val loupe = Loupe(imageView).apply {
   }
 }
 ```
+
+Vertical Translate Animation | Shared Elements
+:-- | :--
+<img src="art/dismiss-animation.gif"> | <img src="art/shared-elements-transition.gif">
 
 ## OnViewTranslateListener
 If you want to do some action while dimissing ImageView, use `OnViewTranslateListener`.
