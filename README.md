@@ -1,15 +1,13 @@
-# Loupe
-
-Loupe is a ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
-Loupe is written with Kotlin.
-
 <img src="art/logo.png" height="200">
 
-Loupe provides modern image viewer ui with super simple code.
+Loupe is:
+- a ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
+- written in Kotlin.
+- provides modern image viewer ui with super simple code.
 
 You can implement the Twitter-like image viewer in 10 minutes.
 
-<img src="art/preview-zooming.gif"><img src="art/preview-dismiss-animation.gif"><img src="art/preview-shared-elements.gif">
+<img src="art/preview-zooming.gif" width="260"><img src="art/preview-dismiss-animation.gif" width="260"><img src="art/preview-shared-elements.gif" width="260">
 
 ## Download
 Loupe is available on `jCenter()`
@@ -71,7 +69,7 @@ val loupe = Loupe(imageView).apply {
 
 Vertical Translate Animation | Shared Elements
 :-- | :--
-<img src="art/dismiss-animation.gif"> | <img src="art/shared-elements-transition.gif">
+<img src="art/dismiss-animation.gif" width="260"> | <img src="art/shared-elements-transition.gif" width="260">
 
 ## OnViewTranslateListener
 If you want to do some action while dimissing ImageView, use `OnViewTranslateListener`.
