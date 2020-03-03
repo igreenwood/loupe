@@ -58,36 +58,6 @@ class MasterActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         adapter.apply {
-            addAll(ImageUrls.urls1.map {
-                SingleImageItem(
-                    it,
-                    singleImageListener
-                )
-            })
-            add(
-                MultipleImageItem(
-                    ImageUrls.urls2,
-                    multipleImageListener
-                )
-            )
-            addAll(ImageUrls.urls3.map {
-                SingleImageItem(
-                    it,
-                    singleImageListener
-                )
-            })
-            add(
-                MultipleImageItem(
-                    ImageUrls.urls4,
-                    multipleImageListener
-                )
-            )
-            addAll(ImageUrls.urls5.map {
-                SingleImageItem(
-                    it,
-                    singleImageListener
-                )
-            })
             add(
                 MultipleImageItem(
                     ImageUrls.urls1,
@@ -119,6 +89,30 @@ class MasterActivity : AppCompatActivity() {
                 )
             )
             addAll(ImageUrls.urls1.map {
+                SingleImageItem(
+                    it,
+                    singleImageListener
+                )
+            })
+            add(
+                MultipleImageItem(
+                    ImageUrls.urls2,
+                    multipleImageListener
+                )
+            )
+            addAll(ImageUrls.urls3.map {
+                SingleImageItem(
+                    it,
+                    singleImageListener
+                )
+            })
+            add(
+                MultipleImageItem(
+                    ImageUrls.urls4,
+                    multipleImageListener
+                )
+            )
+            addAll(ImageUrls.urls5.map {
                 SingleImageItem(
                     it,
                     singleImageListener

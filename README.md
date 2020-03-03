@@ -1,13 +1,15 @@
-[logo](logo-url)
+# Loupe
 
-ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
-Loupe is written with Kotlin. 
+Loupe is a ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
+Loupe is written with Kotlin.
 
-[preview](preview-url)
+<img src="art/logo.png">
 
 Loupe provides modern image viewer ui with super simple code.
 
 You can implement the Twitter-like image viewer in 10 minutes.
+
+<img src="art/preview.gif">
 
 ## Download
 Loupe is available on `jCenter()`
@@ -45,20 +47,19 @@ val loupe = Loupe(imageView).apply {
 ```
 That's all. Now your ImageView supports zooming and swipe-to-dismiss action :smile:
 
-[zooming-preview](zooming-preview-url)
-[dismissing-preview](dismissing-preview-url)
-
 ## Two type dismiss action
 
-- Fling dismiss animation
+Loupe supports two type dismiss action.
+
+### Dismiss Animation
 The default dismiss animation is vertical fling animation.
 
-[fling-dismiss-animation](fling-dismiss-animation-url)
+<img src="art/dismiss-animation.gif">
 
-- Use SharedElemtns Transition
+### Shared Elements Transition
 You can use Shared Elements Transition.
 
-[shared-elements-transition-animatijon](shared-elements-transition-animation-url)
+<img src="art/shared-elements-transition.gif">
 
 If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
 
