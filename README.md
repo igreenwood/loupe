@@ -13,7 +13,7 @@ You can implement the Twitter-like image viewer in 10 minutes.
 Loupe is available on `jCenter()`
 ```groovy
 dependencies {
-  implementation 'com.igreenwood:loupe:0.4.0'
+  implementation 'com.igreenwood:loupe:0.5.0'
 }
 ```
 
