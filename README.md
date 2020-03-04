@@ -1,6 +1,6 @@
 # Loupe
 
-Loupe is a ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
+Loupe is an ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
 
 <img src="art/logo.png" width="300">
 
