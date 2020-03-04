@@ -67,7 +67,7 @@ val loupe = Loupe(imageView).apply {
 }
 ```
 
-Vertical Translate Animation | Shared Elements
+Vertical Translate Animation | Shared Elements Transition
 :-- | :--
 <img src="art/dismiss-animation.gif" width="260"> | <img src="art/shared-elements-transition.gif" width="260">
 
@@ -102,9 +102,9 @@ val loupe = Loupe(imageView).apply {
 ```
 For more details, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
 
-## Using Loupe with image loader libraries.
+## Using Loupe with image loader libraries
 Loupe is just a helper of the ImageView.
-You can use loupe with any image loader libraries.
+You can use Loupe with any image loader libraries.
 If you use with the image loader library, it would be better that initialize `Loupe` after the image loading has finished.
 With Glide, something like this.
 
@@ -182,6 +182,8 @@ Loupe(image).apply {
 }
 ```
 You can try parameters with [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
+
+<img src="art/setting-view.png" width="260">
 
 ## Requirements
 Supported on API Level 21 and above.
