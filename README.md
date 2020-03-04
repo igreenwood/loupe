@@ -19,10 +19,9 @@ dependencies {
 
 ## Quick Start
 
-In your Activity, add the following code. (It is also working with Fragments.)
+In your Activity, add the following code. (Loupe is also working with Fragments.)
 ```kotlin
-val imageView: ImageView // normal ImageView
-val loupe = Loupe(imageView).apply {
+val loupe = Loupe(imageView).apply { // imageView is normal ImageView
   onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {
