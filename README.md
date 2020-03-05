@@ -10,7 +10,6 @@ You can implement the Twitter-like image viewer in 10 minutes.
 <img src="art/preview-zooming.gif" width="260"><img src="art/preview-dismiss-animation.gif" width="260"><img src="art/preview-shared-elements.gif" width="260">
 
 ## Download
-Loupe is available on `jCenter()`
 ```groovy
 dependencies {
   implementation 'com.igreenwood:loupe:LATEST_VERSION'
