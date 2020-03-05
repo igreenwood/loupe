@@ -1,4 +1,4 @@
-# Loupe [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Loupe-lightgrey.svg?style=flat)](https://android-arsenal.com/details/1/8047) [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe)
+# Loupe [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Loupe-lightgrey.svg?style=flat)](https://android-arsenal.com/details/1/8047) [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe) [![CircleCI](https://circleci.com/gh/igreenwood/loupe/tree/master.svg?style=svg)](https://circleci.com/gh/igreenwood/loupe/tree/master)
 
 Loupe is an ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
 
@@ -13,9 +13,10 @@ You can implement the Twitter-like image viewer in 10 minutes.
 Loupe is available on `jCenter()`
 ```groovy
 dependencies {
-  implementation 'com.igreenwood:loupe:0.5.0'
+  implementation 'com.igreenwood:loupe:LATEST_VERSION'
 }
 ```
+`LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
 
 ## Quick Start
 
