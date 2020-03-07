@@ -4,7 +4,7 @@ Loupe is an ImageView Helper for Android that supports zooming and swipe-to-dism
 
 <img src="art/logo.png" width="300">
 
-Loupe provides modern image viewer ui with super simple code.
+Loupe provides modern image viewer ui by super simple code.
 You can implement the Twitter-like image viewer in 10 minutes.
 
 <img src="art/preview-zooming.gif" width="260"><img src="art/preview-dismiss-animation.gif" width="260"><img src="art/preview-shared-elements.gif" width="260">
