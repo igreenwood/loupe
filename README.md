@@ -11,9 +11,6 @@ You can implement the Twitter-like image viewer in 10 minutes.
 
 ## Download
 
-`LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
-
-### jCenter
 Project `build.gradle`
 ```groovy
 repositories {
@@ -26,21 +23,8 @@ dependencies {
   implementation 'com.igreenwood:loupe:LATEST_VERSION'
 }
 ```
-### JitPack
-Project `build.gradle`
-```groovy
-repositories {
-    maven {
-        url "https://jitpack.io"
-    }
-}
-```
-App `build.gradle`
-```groovy
-dependencies {
-    implementation 'com.github.igreenwood:loupe:LATEST_VERSION'
-}
-```
+
+`LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
 
 ## Quick Start
 
