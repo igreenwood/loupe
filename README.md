@@ -1,6 +1,6 @@
 # Loupe [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Loupe-lightgrey.svg?style=flat)](https://android-arsenal.com/details/1/8047) [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe) [![CircleCI](https://circleci.com/gh/igreenwood/loupe/tree/master.svg?style=svg)](https://circleci.com/gh/igreenwood/loupe/tree/master)
 
-Loupe is an ImageView Helper for Android that supports zooming and swipe-to-dismiss action.
+Loupe is an ImageView Helper for Android that supports `pinch-to-zoom` and `swipe-to-dismiss` gesture.
 
 <img src="art/logo.png" width="300">
 
@@ -10,12 +10,37 @@ You can implement the Twitter-like image viewer in 10 minutes.
 <img src="art/preview-zooming.gif" width="260"><img src="art/preview-dismiss-animation.gif" width="260"><img src="art/preview-shared-elements.gif" width="260">
 
 ## Download
+
+`LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
+
+### jCenter
+Project build.gradle
+```groovy
+repositories {
+  jcenter()
+}
+```
+App build.gradle
 ```groovy
 dependencies {
   implementation 'com.igreenwood:loupe:LATEST_VERSION'
 }
 ```
-`LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
+### JitPack
+Project build.gradle
+```groovy
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
+```
+App build.gradle
+```groovy
+dependencies {
+    implementation 'com.github.igreenwood:loupe:LATEST_VERSION'
+}
+```
 
 ## Quick Start
 
@@ -42,13 +67,13 @@ val loupe = Loupe(imageView).apply { // imageView is normal ImageView
   }
 }
 ```
-That's all. Now your ImageView supports zooming and swipe-to-dismiss action :smile:
+That's all. Now your ImageView supports `pinch-to-zoom` and `swipe-to-dismiss` gesture :smile:
 
 ## Dismiss Animation
 
 In default, Loupe uses vertical translate animation on dismissing the ImageView.
 
-If you use Shared Elements Transition, set `useDismissAnimation` to `false`.
+If you want to use Shared Elements Transition, set `useDismissAnimation` to `false`.
 
 ```kotlin
 val loupe = Loupe(imageView).apply {
@@ -71,7 +96,7 @@ Vertical Translate Animation | Shared Elements Transition
 <img src="art/dismiss-animation.gif" width="260"> | <img src="art/shared-elements-transition.gif" width="260">
 
 ## OnViewTranslateListener
-If you want to do some action while dimissing ImageView, use `OnViewTranslateListener`.
+If you want to execute some code while swipe-to-dismiss gesture, use `OnViewTranslateListener`.
 
 ```kotlin
 val loupe = Loupe(imageView).apply {
@@ -126,7 +151,7 @@ Glide.with(imageView.context).load(url)
         dataSource: DataSource?,
         isFirstResource: Boolean
       ): Boolean {
-        val loupe = Loupe(image).apply {
+        val loupe = Loupe(image).apply { // initialize Loupe after the image loading has finished
 
             onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
