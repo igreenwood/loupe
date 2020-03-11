@@ -14,20 +14,20 @@ You can implement the Twitter-like image viewer in 10 minutes.
 `LATEST_VERSION` is [![](https://jitpack.io/v/igreenwood/loupe.svg)](https://jitpack.io/#igreenwood/loupe).
 
 ### jCenter
-Project build.gradle
+Project `build.gradle`
 ```groovy
 repositories {
   jcenter()
 }
 ```
-App build.gradle
+App `build.gradle`
 ```groovy
 dependencies {
   implementation 'com.igreenwood:loupe:LATEST_VERSION'
 }
 ```
 ### JitPack
-Project build.gradle
+Project `build.gradle`
 ```groovy
 repositories {
     maven {
@@ -35,7 +35,7 @@ repositories {
     }
 }
 ```
-App build.gradle
+App `build.gradle`
 ```groovy
 dependencies {
     implementation 'com.github.igreenwood:loupe:LATEST_VERSION'
@@ -44,9 +44,11 @@ dependencies {
 
 ## Quick Start
 
-In your Activity, add the following code. (Loupe also works with Fragments.)
+Create `Loupe` instance with your ImageView and implement the `onViewTranslateListener`.
+Code sample in Activity is something like this. (Loupe also works in Fragments)
+
 ```kotlin
-val loupe = Loupe(imageView).apply { // imageView is normal ImageView
+val loupe = Loupe(imageView).apply { // imageView is a normal ImageView
   onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
     override fun onStart(view: ImageView) {
@@ -97,6 +99,7 @@ Vertical Translate Animation | Shared Elements Transition
 
 ## OnViewTranslateListener
 If you want to execute some code while swipe-to-dismiss gesture, use `OnViewTranslateListener`.
+The code something like this
 
 ```kotlin
 val loupe = Loupe(imageView).apply {
