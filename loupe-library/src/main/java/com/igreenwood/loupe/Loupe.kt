@@ -2,7 +2,11 @@ package com.igreenwood.loupe
 
 import android.animation.Animator
 import android.animation.ValueAnimator
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.graphics.PointF
+import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.drawable.BitmapDrawable
 import android.util.TypedValue
 import android.view.GestureDetector
@@ -63,7 +67,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     // on view translate listener
     var onViewTranslateListener: OnViewTranslateListener? = null
 
-    var dismissAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+    var dismissAnimationInterpolator: Interpolator = AccelerateInterpolator()
 
     var restoreAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
@@ -453,7 +457,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             } else {
                 scaleAnimationDuration
             }
-            interpolator = if(isOverScaling) {
+            interpolator = if (isOverScaling) {
                 overScaleAnimationInterpolator
             } else {
                 doubleTapScaleAnimationInterpolator
