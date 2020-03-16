@@ -6,8 +6,8 @@ publish {
     userOrg = 'isseiaoki'
     groupId = 'com.igreenwood'
     artifactId = 'loupe'
-    publishVersion = '0.5.0'
-    desc = 'ImageView Helper for Android that supports zooming and swipe-to-dismiss action.'
+    publishVersion = '0.6.0'
+    desc = 'ImageView Helper for Android that supports pinch-to-zoom and swipe-to-dismiss gesture.'
     website = 'https://github.com/igreenwood/loupe'
 }
 
