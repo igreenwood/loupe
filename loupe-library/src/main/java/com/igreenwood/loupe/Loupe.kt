@@ -10,7 +10,8 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.Interpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
@@ -23,11 +24,11 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     companion object {
         const val DEFAULT_MAX_ZOOM = 5.0f
-        const val DEFAULT_ANIM_DURATION = 250L
+        const val DEFAULT_ANIM_DURATION = 200L
         const val DEFAULT_VIEW_DRAG_FRICTION = 1f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.25f
         const val DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP = 96
-        val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
+        val DEFAULT_INTERPOLATOR = AccelerateInterpolator()
     }
 
     interface OnViewTranslateListener {
@@ -62,17 +63,17 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     // on view translate listener
     var onViewTranslateListener: OnViewTranslateListener? = null
 
-    var dismissAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var dismissAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var restoreAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var restoreAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var flingAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var flingAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var doubleTapScaleAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var doubleTapScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var overScaleAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var overScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var overScrollAnimationInterpolator = DEFAULT_INTERPOLATOR
+    var overScrollAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     // bitmap matrix
     private var transfrom = Matrix()

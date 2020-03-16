@@ -3,11 +3,11 @@ package com.igreenwood.loupesample.util
 object Pref {
     var useSharedElements = true
     var maxZoom = 8.0f
-    var flingAnimationDuration = 250L
-    var scaleAnimationDuration = 250L
-    var overScaleAnimationDuration = 250L
-    var overScrollAnimationDuration = 250L
-    var dismissAnimationDuration = 250L
-    var restoreAnimationDuration = 250L
+    var flingAnimationDuration = 200L
+    var scaleAnimationDuration = 200L
+    var overScaleAnimationDuration = 200L
+    var overScrollAnimationDuration = 200L
+    var dismissAnimationDuration = 200L
+    var restoreAnimationDuration = 200L
     var viewDragFriction = 1f
 }
