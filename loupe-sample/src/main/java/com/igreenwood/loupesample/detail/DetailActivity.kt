@@ -176,7 +176,6 @@ class DetailActivity : AppCompatActivity() {
                             image.transitionName =
                                 context.getString(R.string.shared_image_transition, position)
                             val loupe = Loupe(image).apply {
-
                                 useDismissAnimation = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
@@ -256,7 +255,6 @@ class DetailActivity : AppCompatActivity() {
                             isFirstResource: Boolean
                         ): Boolean {
                             val loupe = Loupe(image).apply {
-
                                 useDismissAnimation = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
