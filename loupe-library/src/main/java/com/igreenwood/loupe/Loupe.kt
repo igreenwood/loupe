@@ -15,6 +15,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
 import android.widget.ImageView
 import android.widget.OverScroller
@@ -32,7 +33,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         const val DEFAULT_VIEW_DRAG_FRICTION = 1f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.25f
         const val DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP = 96
-        val DEFAULT_INTERPOLATOR = AccelerateInterpolator()
+        const val MAX_FLING_VELOCITY = 8000f
+        val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
     }
 
     interface OnViewTranslateListener {
@@ -51,9 +53,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     // duration millis for restore animation
     var restoreAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for image animation
-    var flingAnimationDuration = DEFAULT_ANIM_DURATION
+    var flingAnimationDuration = 250L
     // duration millis for double tap scale animation
-    var scaleAnimationDuration = DEFAULT_ANIM_DURATION
+    var scaleAnimationDuration = 375L
     // duration millis for over scale animation
     var overScaleAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for over scrolling animation
@@ -73,11 +75,13 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     var flingAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var doubleTapScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+    var doubleTapScaleAnimationInterpolator: Interpolator = AccelerateDecelerateInterpolator()
 
     var overScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     var overScrollAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+
+    private var flingAnimator: Animator = ValueAnimator()
 
     // bitmap matrix
     private var transfrom = Matrix()
@@ -250,6 +254,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
 
             when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    flingAnimator.cancel()
+                }
                 MotionEvent.ACTION_UP -> {
                     when {
                         scale == minScale -> {
@@ -335,10 +342,18 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     }
 
     private fun processFling(velocityX: Float, velocityY: Float) {
-        val (velX, velY) = velocityX to velocityY
+        var (velX, velY) = velocityX to velocityY
 
         if (velX == 0f && velY == 0f) {
             return
+        }
+
+        if (velX > MAX_FLING_VELOCITY) {
+            velX = MAX_FLING_VELOCITY
+        }
+
+        if (velY > MAX_FLING_VELOCITY) {
+            velY = MAX_FLING_VELOCITY
         }
 
         val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
@@ -360,7 +375,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         val toX = scroller.finalX.toFloat()
         val toY = scroller.finalY.toFloat()
 
-        ValueAnimator.ofFloat(0f, 1f).apply {
+        flingAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = flingAnimationDuration
             interpolator = flingAnimationInterpolator
             addUpdateListener {
@@ -389,7 +404,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                     // no op
                 }
             })
-        }.start()
+        }
+        flingAnimator.start()
     }
 
     private fun processScroll(distanceX: Float, distanceY: Float) {
