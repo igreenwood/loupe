@@ -1,13 +1,15 @@
 package com.igreenwood.loupesample.util
 
+import com.igreenwood.loupe.Loupe
+
 object Pref {
     var useSharedElements = true
-    var maxZoom = 8.0f
-    var flingAnimationDuration = 500L
-    var scaleAnimationDuration = 375L
-    var overScaleAnimationDuration = 375L
-    var overScrollAnimationDuration = 375L
-    var dismissAnimationDuration = 250L
-    var restoreAnimationDuration = 250L
-    var viewDragFriction = 1f
+    var maxZoom = Loupe.DEFAULT_MAX_ZOOM
+    var flingAnimationDuration = Loupe.DEFAULT_ANIM_DURATION
+    var scaleAnimationDuration = Loupe.DEFAULT_ANIM_DURATION_LONG
+    var overScaleAnimationDuration = Loupe.DEFAULT_ANIM_DURATION_LONG
+    var overScrollAnimationDuration = Loupe.DEFAULT_ANIM_DURATION
+    var dismissAnimationDuration = Loupe.DEFAULT_ANIM_DURATION
+    var restoreAnimationDuration = Loupe.DEFAULT_ANIM_DURATION
+    var viewDragFriction = Loupe.DEFAULT_VIEW_DRAG_FRICTION
 }

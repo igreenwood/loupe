@@ -29,7 +29,6 @@ import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.databinding.ItemImageBinding
 import com.igreenwood.loupesample.util.Pref
 import kotlinx.android.synthetic.main.activity_detail.*
-import kotlin.math.roundToInt
 
 class DetailActivity : AppCompatActivity() {
 
@@ -67,14 +66,6 @@ class DetailActivity : AppCompatActivity() {
         }
 
         initToolbar()
-
-        binding.root.background = ColorDrawable(
-            ContextCompat.getColor(
-                this@DetailActivity,
-                R.color.black_alpha_87
-            )
-        )
-
         initViewPager()
     }
 
@@ -115,11 +106,6 @@ class DetailActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeBackgroundAlpha(amount: Float) {
-        val newAlpha = ((1.0f - amount) * 255).roundToInt()
-        binding.root.background.alpha = newAlpha
-    }
-
     private fun hideToolbar() {
         binding.toolbar.animate()
             .setInterpolator(AccelerateDecelerateInterpolator())
@@ -134,7 +120,7 @@ class DetailActivity : AppCompatActivity() {
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val binding = ItemImageBinding.inflate(LayoutInflater.from(context))
             container.addView(binding.root)
-            loadImage(binding.image, position)
+            loadImage(binding.image, binding.container, position)
             views[position] = binding.image
             return binding.root
         }
@@ -149,7 +135,7 @@ class DetailActivity : AppCompatActivity() {
 
         override fun getCount() = urls.size
 
-        private fun loadImage(image: ImageView, position: Int) {
+        private fun loadImage(image: ImageView, container: ViewGroup, position: Int) {
             if (Pref.useSharedElements) {
                 // shared elements
                 Glide.with(image.context)
@@ -175,8 +161,8 @@ class DetailActivity : AppCompatActivity() {
                         ): Boolean {
                             image.transitionName =
                                 context.getString(R.string.shared_image_transition, position)
-                            val loupe = Loupe(image).apply {
-                                useDismissAnimation = !Pref.useSharedElements
+                            val loupe = Loupe(image, container).apply {
+                                useFlingDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
                                 scaleAnimationDuration = Pref.scaleAnimationDuration
@@ -193,7 +179,7 @@ class DetailActivity : AppCompatActivity() {
                                     }
 
                                     override fun onViewTranslate(view: ImageView, amount: Float) {
-                                        changeBackgroundAlpha(amount)
+
                                     }
 
                                     override fun onRestore(view: ImageView) {
@@ -254,8 +240,8 @@ class DetailActivity : AppCompatActivity() {
                             dataSource: DataSource?,
                             isFirstResource: Boolean
                         ): Boolean {
-                            val loupe = Loupe(image).apply {
-                                useDismissAnimation = !Pref.useSharedElements
+                            val loupe = Loupe(image, container).apply {
+                                useFlingDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
                                 scaleAnimationDuration = Pref.scaleAnimationDuration
@@ -272,7 +258,7 @@ class DetailActivity : AppCompatActivity() {
                                     }
 
                                     override fun onViewTranslate(view: ImageView, amount: Float) {
-                                        changeBackgroundAlpha(amount)
+
                                     }
 
                                     override fun onRestore(view: ImageView) {

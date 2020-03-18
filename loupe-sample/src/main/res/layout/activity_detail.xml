@@ -5,7 +5,6 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/black_alpha_87"
         android:fitsSystemWindows="true"
         >
 
