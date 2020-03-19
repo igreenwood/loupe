@@ -329,7 +329,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun processFling(velocityX: Float, velocityY: Float) {
-        var (velX, velY) = velocityX to velocityY
+        var (velX, velY) = velocityX / scale to velocityY / scale
 
         if (velX == 0f && velY == 0f) {
             return
