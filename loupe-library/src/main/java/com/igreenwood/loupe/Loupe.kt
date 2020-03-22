@@ -36,6 +36,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.5f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP = 96
         const val MAX_FLING_VELOCITY = 8000f
+        const val DEFAULT_DOUBLE_TAP_ZOOM_SCALE = 0.5f
         val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
     }
 
@@ -80,6 +81,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     var overScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     var overScrollAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+
+    var doubleTapZoomScale: Float = DEFAULT_DOUBLE_TAP_ZOOM_SCALE // 0f~1f
 
     private var flingAnimator: Animator = ValueAnimator()
 
@@ -194,7 +197,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                 if (scale > minScale) {
                     jumpToMinimumScale()
                 } else {
-                    jumpToMediumScale(e)
+                    jumpToTargetScale(e)
                 }
                 return true
             }
@@ -410,9 +413,9 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         setTransform()
     }
 
-    private fun jumpToMediumScale(e: MotionEvent) {
+    private fun jumpToTargetScale(e: MotionEvent) {
         val startScale = scale
-        val endScale = minScale * maxZoom * 0.5f
+        val endScale = minScale * maxZoom * doubleTapZoomScale
         val focalX = e.x
         val focalY = e.y
         ValueAnimator.ofFloat(startScale, endScale).apply {
