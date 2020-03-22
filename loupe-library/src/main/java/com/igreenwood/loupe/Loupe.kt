@@ -36,6 +36,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.5f
         const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP = 96
         const val MAX_FLING_VELOCITY = 8000f
+        const val MIN_FLING_VELOCITY = 1500f
         const val DEFAULT_DOUBLE_TAP_ZOOM_SCALE = 0.5f
         val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
     }
@@ -84,6 +85,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
 
     var doubleTapZoomScale: Float = DEFAULT_DOUBLE_TAP_ZOOM_SCALE // 0f~1f
 
+    var minimumFlingVelocity: Float = MIN_FLING_VELOCITY
+
     private var flingAnimator: Animator = ValueAnimator()
 
     // bitmap matrix
@@ -109,7 +112,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
 
     private val scroller: OverScroller
     private var originalViewBounds = Rect()
-    private var dragDismissDistance = 0f
+    private var dragToDismissThreshold = 0f
     private var dragDismissDistanceInPx = 0f
     private var isViewTranslateAnimationRunning = false
     private var isVerticalScrollEnabled = true
@@ -288,10 +291,6 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun startVerticalTranslateAnimation(velY: Float) {
-        if (velY == 0f) {
-            return
-        }
-
         isViewTranslateAnimationRunning = true
 
         imageView.run {
@@ -530,7 +529,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun dismissOrRestore() {
-        if (abs(viewOffsetY()) > dragDismissDistance) {
+        if (shouldTriggerDragToDismissAnimation()) {
             if (useFlingToDismissGesture) {
                 startDragToDismissAnimation()
             } else {
@@ -540,6 +539,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             restoreViewTransform()
         }
     }
+
+    private fun shouldTriggerDragToDismissAnimation() = dragDistance() > dragToDismissThreshold
 
     private fun restoreViewTransform() {
         imageView.run {
@@ -610,8 +611,10 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun processFlingToDismiss(velocityY: Float) {
-        if (useFlingToDismissGesture) {
-            isViewTranslateAnimationRunning = true
+        if (useFlingToDismissGesture && !isViewTranslateAnimationRunning) {
+            if (abs(velocityY) < minimumFlingVelocity) {
+                return
+            }
             startVerticalTranslateAnimation(velocityY)
         }
     }
@@ -619,11 +622,13 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     private fun calcTranslationAmount() =
         constrain(
             0f,
-            norm(abs(viewOffsetY()), 0f, originalViewBounds.height().toFloat()),
+            norm(dragDistance(), 0f, originalViewBounds.height().toFloat()),
             1f
         )
 
-    private fun isDragging() = viewOffsetY() != 0f
+    private fun dragDistance() = abs(viewOffsetY())
+
+    private fun isDragging() = dragDistance() > 0f
 
     private fun viewOffsetY() = imageView.y - initialY
 
@@ -849,7 +854,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     fun setDragToDismissDistance(distance: Int) {
-        dragDismissDistance = TypedValue.applyDimension(
+        dragToDismissThreshold = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             distance.toFloat(),
             imageView.context.resources.displayMetrics
@@ -857,6 +862,6 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     fun setDragToDismissDistance(heightRatio: Float) {
-        dragDismissDistance = imageView.height * heightRatio
+        dragToDismissThreshold = imageView.height * heightRatio
     }
 }
