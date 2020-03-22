@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
@@ -15,7 +14,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.SharedElementCallback
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.viewpager.widget.PagerAdapter
 import com.bumptech.glide.Glide
@@ -162,7 +160,7 @@ class DetailActivity : AppCompatActivity() {
                             image.transitionName =
                                 context.getString(R.string.shared_image_transition, position)
                             val loupe = Loupe(image, container).apply {
-                                useFlingDismissGesture = !Pref.useSharedElements
+                                useFlingToDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
                                 scaleAnimationDuration = Pref.scaleAnimationDuration
@@ -241,7 +239,7 @@ class DetailActivity : AppCompatActivity() {
                             isFirstResource: Boolean
                         ): Boolean {
                             val loupe = Loupe(image, container).apply {
-                                useFlingDismissGesture = !Pref.useSharedElements
+                                useFlingToDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
                                 scaleAnimationDuration = Pref.scaleAnimationDuration

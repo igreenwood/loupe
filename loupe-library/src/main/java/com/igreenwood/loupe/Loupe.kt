@@ -50,7 +50,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     // max zoom(> 1f)
     var maxZoom = DEFAULT_MAX_ZOOM
     // use fling gesture for dismiss
-    var useFlingDismissGesture = true
+    var useFlingToDismissGesture = true
     // duration millis for dismiss animation
     var dismissAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for restore animation
@@ -111,12 +111,11 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     private var originalViewBounds = Rect()
     private var dragDismissDistance = 0f
     private var dragDismissDistanceInPx = 0f
-    private var isDismissing = false
+    private var isViewTranslateAnimationRunning = false
     private var isVerticalScrollEnabled = true
     private var isHorizontalScrollEnabled = true
-    private var isFlinging = false
-    private var isFlingDismissProcessRunning = false
-    private var isAnimating = false
+    private var isBitmapTranslateAnimationRunning = false
+    private var isBitmapScaleAnimationRunninng = false
     private var initialY = 0f
     // scaling helper
     private var scaleGestureDetector: ScaleGestureDetector? = null
@@ -126,7 +125,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                if (isDragging() || isFlinging || isAnimating) {
+                if (isDragging() || isBitmapTranslateAnimationRunning || isBitmapScaleAnimationRunninng) {
                     return false
                 }
 
@@ -139,7 +138,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                     return true
                 }
 
-                zoom(calcNewScale(scaleFactor), focalX, focalY)
+                zoomToTargetScale(calcNewScale(scaleFactor), focalX, focalY)
 
                 return true
             }
@@ -180,9 +179,9 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                 e1 ?: return true
 
                 if (scale > minScale) {
-                    processFling(velocityX, velocityY)
+                    processFlingBitmap(velocityX, velocityY)
                 } else {
-                    processFlingDismissAction(velocityY)
+                    processFlingToDismiss(velocityY)
                 }
                 return true
             }
@@ -190,14 +189,14 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             override fun onDoubleTap(e: MotionEvent?): Boolean {
                 e ?: return false
 
-                if (isAnimating) {
+                if (isBitmapScaleAnimationRunninng) {
                     return true
                 }
 
                 if (scale > minScale) {
-                    jumpToMinimumScale()
+                    zoomOutToMinimumScale()
                 } else {
-                    jumpToTargetScale(e)
+                    zoomInToTargetScale(e)
                 }
                 return true
             }
@@ -227,7 +226,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             return false
         }
 
-        if (isDismissing) {
+        if (isViewTranslateAnimationRunning) {
             return false
         }
 
@@ -244,7 +243,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             MotionEvent.ACTION_UP -> {
                 when {
                     scale == minScale -> {
-                        if (!isFlingDismissProcessRunning) {
+                        if (!isViewTranslateAnimationRunning) {
                             dismissOrRestoreIfNeeded()
                         }
                     }
@@ -252,7 +251,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                         constrainBitmapBounds(true)
                     }
                     else -> {
-                        jumpToMinimumScale(true)
+                        zoomOutToMinimumScale(true)
                     }
                 }
             }
@@ -277,10 +276,10 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         imageView.run {
             setupLayout(left, top, right, bottom)
             initialY = y
-            if (useFlingDismissGesture) {
-                setDragDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO)
+            if (useFlingToDismissGesture) {
+                setDragToDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO)
             } else {
-                setDragDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP)
+                setDragToDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP)
             }
             container.background.alpha = 255
             setTransform()
@@ -288,12 +287,12 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         }
     }
 
-    private fun startDismissWithFling(velY: Float) {
+    private fun startVerticalTranslateAnimation(velY: Float) {
         if (velY == 0f) {
             return
         }
 
-        isDismissing = true
+        isViewTranslateAnimationRunning = true
 
         imageView.run {
             val translationY = if (velY > 0) {
@@ -316,12 +315,12 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                     }
 
                     override fun onAnimationRepeat(p0: Animator?) {
@@ -331,7 +330,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         }
     }
 
-    private fun processFling(velocityX: Float, velocityY: Float) {
+    private fun processFlingBitmap(velocityX: Float, velocityY: Float) {
         var (velX, velY) = velocityX / scale to velocityY / scale
 
         if (velX == 0f && velY == 0f) {
@@ -378,16 +377,16 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isFlinging = true
+                    isBitmapTranslateAnimationRunning = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isFlinging = false
+                    isBitmapTranslateAnimationRunning = false
                     constrainBitmapBounds()
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isFlinging = false
+                    isBitmapTranslateAnimationRunning = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
@@ -413,7 +412,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         setTransform()
     }
 
-    private fun jumpToTargetScale(e: MotionEvent) {
+    private fun zoomInToTargetScale(e: MotionEvent) {
         val startScale = scale
         val endScale = minScale * maxZoom * doubleTapZoomScale
         val focalX = e.x
@@ -422,25 +421,25 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             duration = scaleAnimationDuration
             interpolator = doubleTapScaleAnimationInterpolator
             addUpdateListener {
-                zoom(it.animatedValue as Float, focalX, focalY)
+                zoomToTargetScale(it.animatedValue as Float, focalX, focalY)
                 ViewCompat.postInvalidateOnAnimation(imageView)
                 setTransform()
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isAnimating = true
+                    isBitmapScaleAnimationRunninng = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                     if (endScale == minScale) {
-                        zoom(minScale, focalX, focalY)
+                        zoomToTargetScale(minScale, focalX, focalY)
                         imageView.postInvalidate()
                     }
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
@@ -450,7 +449,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         }.start()
     }
 
-    private fun jumpToMinimumScale(isOverScaling: Boolean = false) {
+    private fun zoomOutToMinimumScale(isOverScaling: Boolean = false) {
         val startScale = scale
         val endScale = minScale
         val startLeft = bitmapBounds.left
@@ -481,11 +480,11 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isAnimating = true
+                    isBitmapScaleAnimationRunninng = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                     if (endScale == minScale) {
                         scale = minScale
                         calcBounds()
@@ -495,7 +494,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
@@ -517,18 +516,14 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
             onViewTranslateListener?.onStart(imageView)
         }
 
-//        val distY = (lastDistY + distanceY) / 2f
-//        lastDistY = distanceY
-        val distY = distanceY
-
-        imageView.y -= distY * viewDragFriction // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        imageView.y -= distanceY * viewDragFriction // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
         val amount = calcTranslationAmount()
         changeBackgroundAlpha(amount)
         onViewTranslateListener?.onViewTranslate(imageView, amount)
     }
 
     private fun dismissOrRestoreIfNeeded() {
-        if (!isDragging() || isDismissing) {
+        if (!isDragging() || isViewTranslateAnimationRunning) {
             return
         }
         dismissOrRestore()
@@ -536,8 +531,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
 
     private fun dismissOrRestore() {
         if (abs(viewOffsetY()) > dragDismissDistance) {
-            if (useFlingDismissGesture) {
-                startDismissWithDrag()
+            if (useFlingToDismissGesture) {
+                startDragToDismissAnimation()
             } else {
                 onViewTranslateListener?.onDismiss(imageView)
             }
@@ -577,7 +572,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         }
     }
 
-    private fun startDismissWithDrag() {
+    private fun startDragToDismissAnimation() {
         imageView.run {
             val translationY = if (y - initialY > 0) {
                 originalViewBounds.top + height - top
@@ -595,16 +590,16 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
-                        isDismissing = true
+                        isViewTranslateAnimationRunning = true
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                     }
 
                     override fun onAnimationRepeat(p0: Animator?) {
@@ -614,10 +609,10 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         }
     }
 
-    private fun processFlingDismissAction(velocityY: Float) {
-        if (useFlingDismissGesture) {
-            isFlingDismissProcessRunning = true
-            startDismissWithFling(velocityY)
+    private fun processFlingToDismiss(velocityY: Float) {
+        if (useFlingToDismissGesture) {
+            isViewTranslateAnimationRunning = true
+            startVerticalTranslateAnimation(velocityY)
         }
     }
 
@@ -637,7 +632,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
      * focalX: focal x in current bitmapBounds
      * focalY: focal y in current bitmapBounds
      */
-    private fun zoom(targetScale: Float, focalX: Float, focalY: Float) {
+    private fun zoomToTargetScale(targetScale: Float, focalX: Float, focalY: Float) {
         scale = targetScale
         val lastBounds = RectF(bitmapBounds)
         // scale has changed, recalculate bitmap bounds
@@ -682,7 +677,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun constrainBitmapBounds(animate: Boolean = false) {
-        if (isFlinging || isAnimating) {
+        if (isBitmapTranslateAnimationRunning || isBitmapScaleAnimationRunninng) {
             return
         }
 
@@ -853,7 +848,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         container.background.alpha = newAlpha
     }
 
-    fun setDragDismissDistance(distance: Int) {
+    fun setDragToDismissDistance(distance: Int) {
         dragDismissDistance = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             distance.toFloat(),
@@ -861,7 +856,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         )
     }
 
-    fun setDragDismissDistance(heightRatio: Float) {
+    fun setDragToDismissDistance(heightRatio: Float) {
         dragDismissDistance = imageView.height * heightRatio
     }
 }
