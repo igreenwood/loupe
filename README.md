@@ -36,10 +36,8 @@ Once the user swipe down the image in `DetailActivity`, it will close `DetailAct
 
 If you do not use `SharedElement Transition`, you don't need to any additional code to `MasterActivity.kt`.
 
-1. In your `activity_detail.xml` , wrap your full screen `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
-
-This step is required for avoiding touch handling conflicts.
-Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
+#### 1. In your `activity_detail.xml`, wrap your full screen `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
+This step is required for avoiding touch handling conflicts. Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
 
 ```xml
 <FrameLayout
@@ -54,15 +52,14 @@ Set the background color to this `ViewGroup`, if you want to change alpha of bac
 </FrameLayout>
 ```
 
-2. In your `DetailActivity.kt`, create `Loupe` instance.
-
+#### 2. In your `DetailActivity.kt`, create `Loupe` instance.
 The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
 
 ```kotlin
 val loupe = Loupe(imageView, container)
 ```
 
-3. In your `DetailActivity.kt`, implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
+#### 3. In your `DetailActivity.kt`, implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
 
 ```kotlin
 val loupe = Loupe(imageView).apply { // imageView is your ImageView
@@ -94,7 +91,7 @@ Now your `ImageView` supports `pinch-to-zoom` and `swipe-to-dismiss` gesture :sm
 
 When using `Shared Element Transition`, the code is little more complicated.
 
-1. Add `app/res/transition/smooth_transition.xml` to your project. (Change the file name to what you want.)
+#### 1. Add `app/res/transition/smooth_transition.xml` to your project. (Change the file name to what you want.)
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -107,7 +104,7 @@ When using `Shared Element Transition`, the code is little more complicated.
 </transitionSet>
 ```
 
-2. Set the transition xml file(`smooth_transition.xml`) to your `AppTheme` in `styles.xml` and add settings for `Shared Element Transition`.
+#### 2. Set the transition xml file(`smooth_transition.xml`) to your `AppTheme` in `styles.xml` and add settings for `Shared Element Transition`.
 
 ```xml
 <resources>
@@ -119,7 +116,7 @@ When using `Shared Element Transition`, the code is little more complicated.
 </resources>
 ```
 
-3. Wrap your `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
+#### 3. In your `activity_detail.xml`, wrap your `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
 
 This step is required for avoiding touch handling conflicts.
 Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
@@ -137,7 +134,7 @@ Set the background color to this `ViewGroup`, if you want to change alpha of bac
 </FrameLayout>
 ```
 
-4. In `MasterActivity.kt`, set the transition name to the target `ImageView` and pass the shared element information via Bundle.
+#### 4. In `MasterActivity.kt`, set the transition name to the target `ImageView` and pass the shared element information via Bundle.
 ```kotlin
 targetImageView.transitionName = "your_transition_name"
 
@@ -153,10 +150,9 @@ startActivity(
 )
 ```
 
-5. In `DetailActivity.kt`, call `postponeEnterTransition()` in `onCreate()`. 
-After the image loaded,  set the same transition name to the target `ImageView`, and call `startPostponedEnterTransition()`.
+#### 5. In `DetailActivity.kt`, call `postponeEnterTransition()` in `onCreate()`. After the image loaded,  set the same transition name to the target `ImageView`, and call `startPostponedEnterTransition()`.
 
-6. In `DetailActivity.kt`, create `Loupe` instance after the image has loaded.
+#### 6. In `DetailActivity.kt`, create `Loupe` instance after the image has loaded.
 
 The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
 In default, Loupe uses vertical translate animation on dismissing the `ImageView`.
@@ -168,7 +164,7 @@ val loupe = Loupe(imageView, container).apply {
 }
 ```
 
-6. Implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
+#### 7. Implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
 
 ```kotlin
 val loupe = Loupe(imageView).apply { // imageView is your ImageView
