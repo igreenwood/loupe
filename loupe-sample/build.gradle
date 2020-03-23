@@ -28,7 +28,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-//    implementation project(':loupe-library')
+    implementation project(':loupe-library')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.core:core-ktx:1.2.0'
@@ -43,5 +43,5 @@ dependencies {
     implementation 'com.xwray:groupie:2.7.0'
     implementation 'com.xwray:groupie-databinding:2.7.0'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'com.igreenwood:loupe:0.7.0'
+    implementation 'com.igreenwood:loupe:1.0.0'
 }

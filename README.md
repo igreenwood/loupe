@@ -14,13 +14,13 @@ You can implement the Twitter-like image viewer in 10 minutes.
 Project `build.gradle`
 ```groovy
 repositories {
-  jcenter()
+    jcenter()
 }
 ```
 App `build.gradle`
 ```groovy
 dependencies {
-  implementation 'com.igreenwood:loupe:LATEST_VERSION'
+    implementation 'com.igreenwood:loupe:LATEST_VERSION'
 }
 ```
 
@@ -28,87 +28,203 @@ dependencies {
 
 ## Quick Start
 
-Create `Loupe` instance with your ImageView and implement the `onViewTranslateListener`.
-Code sample in Activity is something like this. (Loupe also works in Fragments)
+Let's think about simple `Master/Detail Flow`. 
+(If the user taps the image in `MasterActivity`, it will open `DetailActivity` and full screen image shows.
+Once the user swipe down the image in `DetailActivity`, it will close `DetailActivity` and back to `MasterActivity`.)
+
+### Use `Fling-To-Dismiss Gesture`
+
+If you do not use `SharedElement Transition`, you don't need to any additional code to `MasterActivity.kt`.
+
+1. In your `activity_detail.xml` , wrap your full screen `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
+
+This step is required for avoiding touch handling conflicts.
+Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
+
+```xml
+<FrameLayout
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black_alpha_87">
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>
+```
+
+2. In your `DetailActivity.kt`, create `Loupe` instance.
+
+The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
 
 ```kotlin
-val loupe = Loupe(imageView).apply { // imageView is a normal ImageView
-  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
+val loupe = Loupe(imageView, container)
+```
 
-    override fun onStart(view: ImageView) {
-      
-    }
+3. In your `DetailActivity.kt`, implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
 
-    override fun onViewTranslate(view: ImageView, amount: Float) {
-      
-    }
+```kotlin
+val loupe = Loupe(imageView).apply { // imageView is your ImageView
+    onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
-    override fun onRestore(view: ImageView) {
-      
-    }
+        override fun onStart(view: ImageView) {
+            // called when the view starts moving
+        }
 
-    override fun onDismiss(view: ImageView) {
-      finish()
+        override fun onViewTranslate(view: ImageView, amount: Float) {
+            // called whenever the view position changed
+        }
+
+        override fun onRestore(view: ImageView) {
+            // called when the view drag gesture ended
+        }
+
+        override fun onDismiss(view: ImageView) {
+            // called when the view drag gesture ended
+            finish()
+        }
     }
-  }
 }
 ```
-That's all. Now your ImageView supports `pinch-to-zoom` and `swipe-to-dismiss` gesture :smile:
+
+Now your `ImageView` supports `pinch-to-zoom` and `swipe-to-dismiss` gesture :smile:
+
+### Use `Shared Element Transition`
+
+When using `Shared Element Transition`, the code is little more complicated.
+
+1. Add `app/res/transition/smooth_transition.xml` to your project. (Change the file name to what you want.)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<transitionSet xmlns:android="http://schemas.android.com/apk/res/android"
+    android:transitionOrdering="together"
+    android:duration="375"
+    >
+    <changeBounds/>
+    <changeImageTransform/>
+</transitionSet>
+```
+
+2. Set the transition xml file(`smooth_transition.xml`) to your `AppTheme` in `styles.xml` and add settings for `Shared Element Transition`.
+
+```xml
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowSharedElementsUseOverlay">true</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/smooth_transition</item>
+        <item name="android:windowSharedElementExitTransition">@transition/smooth_transition</item>
+    </style>
+</resources>
+```
+
+3. Wrap your `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
+
+This step is required for avoiding touch handling conflicts.
+Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
+
+```xml
+<FrameLayout
+    android:id="@+id/container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black_alpha_87">
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>
+```
+
+4. In `MasterActivity.kt`, set the transition name to the target `ImageView` and pass the shared element information via Bundle.
+```kotlin
+targetImageView.transitionName = "your_transition_name"
+
+startActivity(
+    DetailActivity.createIntent(
+        this@MasterActivity
+    ),
+    ActivityOptionsCompat.makeSceneTransitionAnimation(
+        this@MasterActivity,
+        targetView,
+        targetView.transitionName
+    )
+)
+```
+
+5. In `DetailActivity.kt`, call `postponeEnterTransition()` in `onCreate()`. 
+After the image loaded,  set the same transition name to the target `ImageView`, and call `startPostponedEnterTransition()`.
+
+6. In `DetailActivity.kt`, create `Loupe` instance after the image has loaded.
+
+The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
+In default, Loupe uses vertical translate animation on dismissing the `ImageView`.
+If you want to use `Shared Element Transition`, set `useFlingToDismissGesture` to `false`.
+
+```kotlin
+val loupe = Loupe(imageView, container).apply {
+    useFlingToDismissGesture = false
+}
+```
+
+6. Implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
+
+```kotlin
+val loupe = Loupe(imageView).apply { // imageView is your ImageView
+    useFlingToDismissGesture = false
+    onViewTranslateListener = object : Loupe.OnViewTranslateListener {
+
+        override fun onStart(view: ImageView) {
+            // called when the view starts moving
+        }
+
+        override fun onViewTranslate(view: ImageView, amount: Float) {
+            // called whenever the view position changed
+        }
+
+        override fun onRestore(view: ImageView) {
+            // called when the view drag gesture ended
+        }
+
+        override fun onDismiss(view: ImageView) {
+            // called when the view drag gesture ended
+            finishAfterTransition()
+        }
+    }
+}
+```
+
+If you want to use Loupe with `ViewPager`, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
 
 ## Dismiss Animation
 
 In default, Loupe uses vertical translate animation on dismissing the ImageView.
 
-If you want to use Shared Elements Transition, set `useDismissAnimation` to `false`.
-
-```kotlin
-val loupe = Loupe(imageView).apply {
-  useDismissAnimation = false
-  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
-
-    override fun onStart(view: ImageView) {}
-
-    override fun onViewTranslate(view: ImageView, amount: Float) {}
-
-    override fun onRestore(view: ImageView) {}
-
-    override fun onDismiss(view: ImageView) {}
-  }
-}
-```
+If you want to use Shared Elements Transition, set `useFlingToDismissGesture` to `false`.
 
 Vertical Translate Animation | Shared Elements Transition
 :-- | :--
 <img src="art/dismiss-animation.gif" width="260"> | <img src="art/shared-elements-transition.gif" width="260">
 
 ## OnViewTranslateListener
+
 If you want to execute some code while swipe-to-dismiss gesture, use `OnViewTranslateListener`.
-The code something like this
+The code something like this.
 
 ```kotlin
-val loupe = Loupe(imageView).apply {
-  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
+val loupe = Loupe(imageView, container).apply {
+    useFlingToDismissGesture = false
+    onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
-    override fun onStart(view: ImageView) {
-      // called when the user start swiping down/up the view.
-      hideToolbar()
-    }
+        override fun onStart(view: ImageView) {}
 
-    override fun onViewTranslate(view: ImageView, amount: Float) {
-      // called when every time the view y position is updated.
-      changeBackgroundAlpha(amount)
-    }
+        override fun onViewTranslate(view: ImageView, amount: Float) {}
 
-    override fun onRestore(view: ImageView) {
-      // called when user cancelled the swiping.
-      showToolbar()
-    }
+        override fun onRestore(view: ImageView) {}
 
-    override fun onDismiss(view: ImageView) {
-      // called when the view translating animation has ended.
-      finish()
+        override fun onDismiss(view: ImageView) {}
     }
-  }
 }
 ```
 For more details, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
@@ -121,75 +237,80 @@ With Glide, something like this.
 
 ```kotlin
 Glide.with(imageView.context).load(url)
-  .listener(object : RequestListener<Drawable> {
-      override fun onLoadFailed(
-        e: GlideException?,
-        model: Any?,
-        target: Target<Drawable>?,
-        isFirstResource: Boolean
-      ): Boolean {
-        return false
-      }
-
-      override fun onResourceReady(
-        resource: Drawable?,
-        model: Any?,
-        target: Target<Drawable>?,
-        dataSource: DataSource?,
-        isFirstResource: Boolean
-      ): Boolean {
-        val loupe = Loupe(image).apply { // initialize Loupe after the image loading has finished
-
-            onViewTranslateListener = object : Loupe.OnViewTranslateListener {
-
-            override fun onStart(view: ImageView) {}
-
-            override fun onViewTranslate(view: ImageView, amount: Float) {}
-
-            override fun onRestore(view: ImageView) {}
-
-            override fun onDismiss(view: ImageView) {}
+    .listener(object : RequestListener<Drawable> {
+        override fun onLoadFailed(
+            e: GlideException?,
+            model: Any?,
+            target: Target<Drawable>?,
+            isFirstResource: Boolean
+        ): Boolean {
+            return false
         }
-      return false
+
+        override fun onResourceReady(
+            resource: Drawable?,
+            model: Any?,
+            target: Target<Drawable>?,
+            dataSource: DataSource?,
+            isFirstResource: Boolean
+        ): Boolean {
+            val loupe = Loupe(image, container).apply { // initialize Loupe after the image loading has finished
+
+                onViewTranslateListener = object : Loupe.OnViewTranslateListener {
+
+                override fun onStart(view: ImageView) {}
+
+                override fun onViewTranslate(view: ImageView, amount: Float) {}
+
+                override fun onRestore(view: ImageView) {}
+
+                override fun onDismiss(view: ImageView) {}
+            }
+            return false
+        }
     }
-  }
-).into(imageView)
+    ).into(imageView)
 ```
 
 ## Customization
-Here is the customizable parameters.
+The customizable parameters is below.
 
-### Customizable parameters
 ```kotlin
-Loupe(image).apply {
-  useDismissAnimation = true // If you use shared elements transition, set false
-  maxZoom = 8f
-  dismissAnimationDuration = 250L // duration millis for dismiss animation
-  restoreAnimationDuration = 250L // duration millis for restore animation
-  flingAnimationDuration = 250L // duration millis for image fling animation
-  scaleAnimationDuration = 250L // duration millis for double tap scale animation
-  overScaleAnimationDuration = 250L // duration millis for over scale animation
-  overScrollAnimationDuration = 250L // duration millis for over scrolling animation
-  viewDragFriction = 1f // view drag friction for swipe to dismiss(1f : drag distance == view move distance. Smaller value, view is moving more slower)
-  dragDismissDistanceInViewHeightRatio = 0.3f // distance threshold for swipe to dismiss(If the view drag distance is bigger than threshold, view will be dismissed. Otherwise view position will be restored to initial position.)
-  flingDismissActionThresholdInDp = 48 // fling threshold for dismiss action(If the user fling the view and the view drag distance is smaller than threshold, fling dismiss action will be triggered)
-  dismissAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-  restoreAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-  flingAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-  doubleTapScaleAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-  overScaleAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-  overScrollAnimationInterpolator = DecelerateInterpolator() // animationn interpolator
-
-  onViewTranslateListener = object : Loupe.OnViewTranslateListener {
-
-    override fun onStart(view: ImageView) {}
-
-    override fun onViewTranslate(view: ImageView, amount: Float) {}
-
-    override fun onRestore(view: ImageView) {}
-
-    override fun onDismiss(view: ImageView) {}
-  }
+Loupe(image, container).apply {
+        // max zoom(> 1f)
+        maxZoom = 5.0f
+        // duration millis for dismiss animation
+        dismissAnimationDuration = 250L
+        // duration millis for restore animation
+        restoreAnimationDuration = 250L
+        // duration millis for image animation
+        flingAnimationDuration = 250L
+        // duration millis for double tap scale animation
+        scaleAnimationDuration = 375L
+        // duration millis for over scale animation
+        overScaleAnimationDuration = 375L
+        // duration millis for over scrolling animation
+        overScrollAnimationDuration = 250L
+        // view drag friction for swipe to dismiss(1f : drag distance == view move distance. Smaller value, view is moving more slower)
+        viewDragFriction = 1.0f
+        // drag distance threshold in dp for swipe to dismiss
+        dragDismissDistanceInDp = 96
+    
+        dismissAnimationInterpolator = DecelerateInterpolator()
+    
+        restoreAnimationInterpolator = DecelerateInterpolator()
+    
+        flingAnimationInterpolator = DecelerateInterpolator()
+    
+        doubleTapScaleAnimationInterpolator = AccelerateDecelerateInterpolator()
+    
+        overScaleAnimationInterpolator = DecelerateInterpolator()
+    
+        overScrollAnimationInterpolator = DecelerateInterpolator()
+    
+        doubleTapZoomScale = 0.5f // 0f~1f
+    
+        minimumFlingVelocity = 1500f
 }
 ```
 You can try parameters with [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).

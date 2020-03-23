@@ -13,8 +13,9 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.view.animation.Interpolator
 import android.widget.ImageView
 import android.widget.OverScroller
@@ -24,15 +25,20 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChangeListener {
+class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchListener,
+    View.OnLayoutChangeListener {
 
     companion object {
         const val DEFAULT_MAX_ZOOM = 5.0f
-        const val DEFAULT_ANIM_DURATION = 200L
+        const val DEFAULT_ANIM_DURATION = 250L
+        const val DEFAULT_ANIM_DURATION_LONG = 375L
         const val DEFAULT_VIEW_DRAG_FRICTION = 1f
-        const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.25f
-        const val DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP = 96
-        val DEFAULT_INTERPOLATOR = AccelerateInterpolator()
+        const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO = 0.5f
+        const val DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP = 96
+        const val MAX_FLING_VELOCITY = 8000f
+        const val MIN_FLING_VELOCITY = 1500f
+        const val DEFAULT_DOUBLE_TAP_ZOOM_SCALE = 0.5f
+        val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
     }
 
     interface OnViewTranslateListener {
@@ -44,8 +50,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     // max zoom(> 1f)
     var maxZoom = DEFAULT_MAX_ZOOM
-    // dismiss animation flag
-    var useDismissAnimation = true
+    // use fling gesture for dismiss
+    var useFlingToDismissGesture = true
     // duration millis for dismiss animation
     var dismissAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for restore animation
@@ -53,31 +59,35 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     // duration millis for image animation
     var flingAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for double tap scale animation
-    var scaleAnimationDuration = DEFAULT_ANIM_DURATION
+    var scaleAnimationDuration = DEFAULT_ANIM_DURATION_LONG
     // duration millis for over scale animation
-    var overScaleAnimationDuration = DEFAULT_ANIM_DURATION
+    var overScaleAnimationDuration = DEFAULT_ANIM_DURATION_LONG
     // duration millis for over scrolling animation
     var overScrollAnimationDuration = DEFAULT_ANIM_DURATION
     // view drag friction for swipe to dismiss(1f : drag distance == view move distance. Smaller value, view is moving more slower)
     var viewDragFriction = DEFAULT_VIEW_DRAG_FRICTION
-    // distance threshold for swipe to dismiss(If the view drag distance is bigger than threshold, view will be dismissed. Otherwise view position will be restored to initial position.)
-    var dragDismissDistanceInViewHeightRatio = DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO
-    // fling threshold for dismiss action(If the user fling the view and the view drag distance is smaller than threshold, fling dismiss action will be triggered)
-    var flingDismissActionThresholdInDp = DEFAULT_FLING_DISMISS_ACTION_THRESHOLD_IN_DP
+    // drag distance threshold in dp for swipe to dismiss
+    var dragDismissDistanceInDp = DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP
     // on view translate listener
     var onViewTranslateListener: OnViewTranslateListener? = null
 
-    var dismissAnimationInterpolator: Interpolator = AccelerateInterpolator()
+    var dismissAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     var restoreAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     var flingAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
-    var doubleTapScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+    var doubleTapScaleAnimationInterpolator: Interpolator = AccelerateDecelerateInterpolator()
 
     var overScaleAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
 
     var overScrollAnimationInterpolator: Interpolator = DEFAULT_INTERPOLATOR
+
+    var doubleTapZoomScale: Float = DEFAULT_DOUBLE_TAP_ZOOM_SCALE // 0f~1f
+
+    var minimumFlingVelocity: Float = MIN_FLING_VELOCITY
+
+    private var flingAnimator: Animator = ValueAnimator()
 
     // bitmap matrix
     private var transfrom = Matrix()
@@ -102,14 +112,13 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     private val scroller: OverScroller
     private var originalViewBounds = Rect()
-    private var dragDismissDistance = 0f
-    private var flingDismissActionThreshold = 0f
-    private var isDismissing = false
+    private var dragToDismissThreshold = 0f
+    private var dragDismissDistanceInPx = 0f
+    private var isViewTranslateAnimationRunning = false
     private var isVerticalScrollEnabled = true
     private var isHorizontalScrollEnabled = true
-    private var isFlinging = false
-    private var isFlingDismissProcessRunning = false
-    private var isAnimating = false
+    private var isBitmapTranslateAnimationRunning = false
+    private var isBitmapScaleAnimationRunninng = false
     private var initialY = 0f
     // scaling helper
     private var scaleGestureDetector: ScaleGestureDetector? = null
@@ -119,8 +128,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         object : ScaleGestureDetector.OnScaleGestureListener {
 
             override fun onScale(detector: ScaleGestureDetector?): Boolean {
-                if (isDragging() || isFlinging || isAnimating) {
-                    return true
+                if (isDragging() || isBitmapTranslateAnimationRunning || isBitmapScaleAnimationRunninng) {
+                    return false
                 }
 
                 val scaleFactor = detector?.scaleFactor ?: 1.0f
@@ -132,7 +141,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                     return true
                 }
 
-                zoom(calcNewScale(scaleFactor), focalX, focalY)
+                zoomToTargetScale(calcNewScale(scaleFactor), focalX, focalY)
 
                 return true
             }
@@ -173,11 +182,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 e1 ?: return true
 
                 if (scale > minScale) {
-                    processFling(velocityX, velocityY)
+                    processFlingBitmap(velocityX, velocityY)
                 } else {
-                    if (shouldTriggerFlingDismissAction()) {
-                        processFlingDismissAction(velocityY)
-                    }
+                    processFlingToDismiss(velocityY)
                 }
                 return true
             }
@@ -185,91 +192,76 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             override fun onDoubleTap(e: MotionEvent?): Boolean {
                 e ?: return false
 
-                if (isAnimating) {
+                if (isBitmapScaleAnimationRunninng) {
                     return true
                 }
 
                 if (scale > minScale) {
-                    jumpToMinimumScale()
+                    zoomOutToMinimumScale()
                 } else {
-                    jumpToMediumScale(e)
+                    zoomInToTargetScale(e)
                 }
                 return true
             }
-
-
         }
-
-    private fun processFlingDismissAction(velocityY: Float) {
-        isFlingDismissProcessRunning = true
-
-        if (useDismissAnimation) {
-            startDismissWithFling(velocityY)
-        } else {
-            onViewTranslateListener?.onDismiss(imageView)
-        }
-    }
-
-    private fun shouldTriggerFlingDismissAction() = abs(viewOffsetY()) < flingDismissActionThreshold
 
     init {
-        imageView.apply {
+        container.apply {
             setOnTouchListener(this@Loupe)
             addOnLayoutChangeListener(this@Loupe)
             scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
             gestureDetector = GestureDetector(context, onGestureListener)
             scroller = OverScroller(context)
-            flingDismissActionThreshold = TypedValue.applyDimension(
+            dragDismissDistanceInPx = TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                flingDismissActionThresholdInDp.toFloat(),
+                dragDismissDistanceInDp.toFloat(),
                 resources.displayMetrics
             )
-            scaleType = ImageView.ScaleType.MATRIX
         }
+        imageView.scaleType = ImageView.ScaleType.MATRIX
     }
 
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         event ?: return false
+        container.parent.requestDisallowInterceptTouchEvent(scale != minScale)
 
-        imageView.parent.requestDisallowInterceptTouchEvent(scale != minScale)
+        if (!imageView.isEnabled) {
+            return false
+        }
 
-        imageView.run {
-            if (!isEnabled) {
-                return false
+        if (isViewTranslateAnimationRunning) {
+            return false
+        }
+
+        val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
+        val isScaleAnimationIsRunning = scale < minScale
+        if (scaleEvent != scaleGestureDetector?.isInProgress && !isScaleAnimationIsRunning) {
+            // handle single touch gesture when scaling process is not running
+            gestureDetector?.onTouchEvent(event)
+        }
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                flingAnimator.cancel()
             }
-
-            if (isDismissing) {
-                return false
-            }
-
-            val scaleEvent = scaleGestureDetector?.onTouchEvent(event)
-            val isScaleAnimationIsRunning = scale < minScale
-            if (scaleEvent != scaleGestureDetector?.isInProgress && !isScaleAnimationIsRunning) {
-                // handle single touch gesture when scaling process is not running
-                gestureDetector?.onTouchEvent(event)
-            }
-
-            when (event.action) {
-                MotionEvent.ACTION_UP -> {
-                    when {
-                        scale == minScale -> {
-                            if (!isFlingDismissProcessRunning) {
-                                dismissOrRestoreIfNeeded()
-                            }
+            MotionEvent.ACTION_UP -> {
+                when {
+                    scale == minScale -> {
+                        if (!isViewTranslateAnimationRunning) {
+                            dismissOrRestoreIfNeeded()
                         }
-                        scale > minScale -> {
-                            constrainBitmapBounds(true)
-                        }
-                        else -> {
-                            jumpToMinimumScale(true)
-                        }
+                    }
+                    scale > minScale -> {
+                        constrainBitmapBounds(true)
+                    }
+                    else -> {
+                        zoomOutToMinimumScale(true)
                     }
                 }
             }
-
-            setTransform()
-            postInvalidate()
         }
+
+        setTransform()
+        imageView.postInvalidate()
         return true
     }
 
@@ -287,18 +279,19 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         imageView.run {
             setupLayout(left, top, right, bottom)
             initialY = y
-            dragDismissDistance = height * dragDismissDistanceInViewHeightRatio
+            if (useFlingToDismissGesture) {
+                setDragToDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_VIEW_HEIGHT_RATIO)
+            } else {
+                setDragToDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP)
+            }
+            container.background.alpha = 255
             setTransform()
             postInvalidate()
         }
     }
 
-    private fun startDismissWithFling(velY: Float) {
-        if (velY == 0f) {
-            return
-        }
-
-        isDismissing = true
+    private fun startVerticalTranslateAnimation(velY: Float) {
+        isViewTranslateAnimationRunning = true
 
         imageView.run {
             val translationY = if (velY > 0) {
@@ -311,7 +304,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(dismissAnimationInterpolator)
                 .translationY(translationY.toFloat())
                 .setUpdateListener {
-                    onViewTranslateListener?.onViewTranslate(imageView, calcTranslationAmount())
+                    val amount = calcTranslationAmount()
+                    changeBackgroundAlpha(amount)
+                    onViewTranslateListener?.onViewTranslate(imageView, amount)
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
@@ -319,12 +314,12 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                     }
 
                     override fun onAnimationRepeat(p0: Animator?) {
@@ -334,11 +329,19 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }
     }
 
-    private fun processFling(velocityX: Float, velocityY: Float) {
-        val (velX, velY) = velocityX to velocityY
+    private fun processFlingBitmap(velocityX: Float, velocityY: Float) {
+        var (velX, velY) = velocityX / scale to velocityY / scale
 
         if (velX == 0f && velY == 0f) {
             return
+        }
+
+        if (velX > MAX_FLING_VELOCITY) {
+            velX = MAX_FLING_VELOCITY
+        }
+
+        if (velY > MAX_FLING_VELOCITY) {
+            velY = MAX_FLING_VELOCITY
         }
 
         val (fromX, fromY) = bitmapBounds.left to bitmapBounds.top
@@ -360,7 +363,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         val toX = scroller.finalX.toFloat()
         val toY = scroller.finalY.toFloat()
 
-        ValueAnimator.ofFloat(0f, 1f).apply {
+        flingAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = flingAnimationDuration
             interpolator = flingAnimationInterpolator
             addUpdateListener {
@@ -373,23 +376,24 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isFlinging = true
+                    isBitmapTranslateAnimationRunning = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isFlinging = false
+                    isBitmapTranslateAnimationRunning = false
                     constrainBitmapBounds()
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isFlinging = false
+                    isBitmapTranslateAnimationRunning = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
                     // no op
                 }
             })
-        }.start()
+        }
+        flingAnimator.start()
     }
 
     private fun processScroll(distanceX: Float, distanceY: Float) {
@@ -407,34 +411,34 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         setTransform()
     }
 
-    private fun jumpToMediumScale(e: MotionEvent) {
+    private fun zoomInToTargetScale(e: MotionEvent) {
         val startScale = scale
-        val endScale = minScale * maxZoom * 0.5f
+        val endScale = minScale * maxZoom * doubleTapZoomScale
         val focalX = e.x
         val focalY = e.y
         ValueAnimator.ofFloat(startScale, endScale).apply {
             duration = scaleAnimationDuration
             interpolator = doubleTapScaleAnimationInterpolator
             addUpdateListener {
-                zoom(it.animatedValue as Float, focalX, focalY)
+                zoomToTargetScale(it.animatedValue as Float, focalX, focalY)
                 ViewCompat.postInvalidateOnAnimation(imageView)
                 setTransform()
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isAnimating = true
+                    isBitmapScaleAnimationRunninng = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                     if (endScale == minScale) {
-                        zoom(minScale, focalX, focalY)
+                        zoomToTargetScale(minScale, focalX, focalY)
                         imageView.postInvalidate()
                     }
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
@@ -444,7 +448,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }.start()
     }
 
-    private fun jumpToMinimumScale(isOverScaling: Boolean = false) {
+    private fun zoomOutToMinimumScale(isOverScaling: Boolean = false) {
         val startScale = scale
         val endScale = minScale
         val startLeft = bitmapBounds.left
@@ -475,11 +479,11 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             }
             addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) {
-                    isAnimating = true
+                    isBitmapScaleAnimationRunninng = true
                 }
 
                 override fun onAnimationEnd(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                     if (endScale == minScale) {
                         scale = minScale
                         calcBounds()
@@ -489,7 +493,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 }
 
                 override fun onAnimationCancel(p0: Animator?) {
-                    isAnimating = false
+                    isBitmapScaleAnimationRunninng = false
                 }
 
                 override fun onAnimationRepeat(p0: Animator?) {
@@ -511,24 +515,23 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
             onViewTranslateListener?.onStart(imageView)
         }
 
-        val distY = (lastDistY + distanceY) / 2f
-        lastDistY = distanceY
-
-        imageView.y -= distY * viewDragFriction // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
-        onViewTranslateListener?.onViewTranslate(imageView, calcTranslationAmount())
+        imageView.y -= distanceY * viewDragFriction // if viewDragRatio is 1.0f, view translation speed is equal to user scrolling speed.
+        val amount = calcTranslationAmount()
+        changeBackgroundAlpha(amount)
+        onViewTranslateListener?.onViewTranslate(imageView, amount)
     }
 
     private fun dismissOrRestoreIfNeeded() {
-        if (!isDragging() || isDismissing) {
+        if (!isDragging() || isViewTranslateAnimationRunning) {
             return
         }
         dismissOrRestore()
     }
 
     private fun dismissOrRestore() {
-        if (abs(viewOffsetY()) > dragDismissDistance) {
-            if (useDismissAnimation) {
-                startDismissWithDrag()
+        if (shouldTriggerDragToDismissAnimation()) {
+            if (useFlingToDismissGesture) {
+                startDragToDismissAnimation()
             } else {
                 onViewTranslateListener?.onDismiss(imageView)
             }
@@ -537,6 +540,8 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }
     }
 
+    private fun shouldTriggerDragToDismissAnimation() = dragDistance() > dragToDismissThreshold
+
     private fun restoreViewTransform() {
         imageView.run {
             animate()
@@ -544,7 +549,9 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(restoreAnimationInterpolator)
                 .translationY((originalViewBounds.top - top).toFloat())
                 .setUpdateListener {
-                    onViewTranslateListener?.onViewTranslate(this, calcTranslationAmount())
+                    val amount = calcTranslationAmount()
+                    changeBackgroundAlpha(amount)
+                    onViewTranslateListener?.onViewTranslate(this, amount)
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
@@ -566,7 +573,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }
     }
 
-    private fun startDismissWithDrag() {
+    private fun startDragToDismissAnimation() {
         imageView.run {
             val translationY = if (y - initialY > 0) {
                 originalViewBounds.top + height - top
@@ -578,20 +585,22 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
                 .setInterpolator(AccelerateDecelerateInterpolator())
                 .translationY(translationY.toFloat())
                 .setUpdateListener {
-                    onViewTranslateListener?.onViewTranslate(this, calcTranslationAmount())
+                    val amount = calcTranslationAmount()
+                    changeBackgroundAlpha(amount)
+                    onViewTranslateListener?.onViewTranslate(this, amount)
                 }
                 .setListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(p0: Animator?) {
-                        isDismissing = true
+                        isViewTranslateAnimationRunning = true
                     }
 
                     override fun onAnimationEnd(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
-                        isDismissing = false
+                        isViewTranslateAnimationRunning = false
                     }
 
                     override fun onAnimationRepeat(p0: Animator?) {
@@ -601,14 +610,25 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
         }
     }
 
+    private fun processFlingToDismiss(velocityY: Float) {
+        if (useFlingToDismissGesture && !isViewTranslateAnimationRunning) {
+            if (abs(velocityY) < minimumFlingVelocity) {
+                return
+            }
+            startVerticalTranslateAnimation(velocityY)
+        }
+    }
+
     private fun calcTranslationAmount() =
         constrain(
             0f,
-            norm(abs(viewOffsetY()), 0f, originalViewBounds.height().toFloat()),
+            norm(dragDistance(), 0f, originalViewBounds.height().toFloat()),
             1f
         )
 
-    private fun isDragging() = viewOffsetY() != 0f
+    private fun dragDistance() = abs(viewOffsetY())
+
+    private fun isDragging() = dragDistance() > 0f
 
     private fun viewOffsetY() = imageView.y - initialY
 
@@ -617,7 +637,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
      * focalX: focal x in current bitmapBounds
      * focalY: focal y in current bitmapBounds
      */
-    private fun zoom(targetScale: Float, focalX: Float, focalY: Float) {
+    private fun zoomToTargetScale(targetScale: Float, focalX: Float, focalY: Float) {
         scale = targetScale
         val lastBounds = RectF(bitmapBounds)
         // scale has changed, recalculate bitmap bounds
@@ -662,7 +682,7 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
     }
 
     private fun constrainBitmapBounds(animate: Boolean = false) {
-        if (isFlinging || isAnimating) {
+        if (isBitmapTranslateAnimationRunning || isBitmapScaleAnimationRunninng) {
             return
         }
 
@@ -826,5 +846,22 @@ class Loupe(var imageView: ImageView) : View.OnTouchListener, View.OnLayoutChang
 
     private fun norm(value: Float, start: Float, stop: Float): Float {
         return value / (stop - start)
+    }
+
+    private fun changeBackgroundAlpha(amount: Float) {
+        val newAlpha = ((1.0f - amount) * 255).roundToInt()
+        container.background.alpha = newAlpha
+    }
+
+    fun setDragToDismissDistance(distance: Int) {
+        dragToDismissThreshold = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            distance.toFloat(),
+            imageView.context.resources.displayMetrics
+        )
+    }
+
+    fun setDragToDismissDistance(heightRatio: Float) {
+        dragToDismissThreshold = imageView.height * heightRatio
     }
 }
