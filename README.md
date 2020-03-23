@@ -62,7 +62,7 @@ val loupe = Loupe(imageView, container)
 #### 3. In your `DetailActivity.kt`, implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
 
 ```kotlin
-val loupe = Loupe(imageView).apply { // imageView is your ImageView
+val loupe = Loupe(imageView, container).apply { // imageView is your ImageView
     onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
         override fun onStart(view: ImageView) {
@@ -167,7 +167,7 @@ val loupe = Loupe(imageView, container).apply {
 #### 7. Implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
 
 ```kotlin
-val loupe = Loupe(imageView).apply { // imageView is your ImageView
+val loupe = Loupe(imageView, container).apply { // imageView is your ImageView
     useFlingToDismissGesture = false
     onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
