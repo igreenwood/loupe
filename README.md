@@ -144,8 +144,8 @@ startActivity(
     ),
     ActivityOptionsCompat.makeSceneTransitionAnimation(
         this@MasterActivity,
-        targetView,
-        targetView.transitionName
+        targetImageView,
+        targetImageView.transitionName
     )
 )
 ```
