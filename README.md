@@ -34,7 +34,7 @@ Once the user swipe down the image in `DetailActivity`, it will close `DetailAct
 
 ### Use `Fling-To-Dismiss Gesture`
 
-If you do not use `SharedElement Transition`, you don't need to any additional code to `MasterActivity.kt`.
+If you do not use `Shared Element Transition`, you don't need to any additional code to `MasterActivity.kt`.
 
 #### 1. In your `activity_detail.xml`, wrap your full screen `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
 This step is required for avoiding touch handling conflicts. Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
