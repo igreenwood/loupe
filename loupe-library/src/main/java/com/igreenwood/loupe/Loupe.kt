@@ -850,7 +850,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
 
     private fun changeBackgroundAlpha(amount: Float) {
         val newAlpha = ((1.0f - amount) * 255).roundToInt()
-        container.background.alpha = newAlpha
+        container.background.mutate().alpha = newAlpha
     }
 
     fun setDragToDismissDistance(distance: Int) {
