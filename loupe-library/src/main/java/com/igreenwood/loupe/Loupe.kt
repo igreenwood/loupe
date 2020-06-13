@@ -20,12 +20,13 @@ import android.view.animation.Interpolator
 import android.widget.ImageView
 import android.widget.OverScroller
 import androidx.core.view.ViewCompat
+import java.lang.ref.WeakReference
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchListener,
+class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     View.OnLayoutChangeListener {
 
     companion object {
@@ -221,8 +222,14 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         imageView.scaleType = ImageView.ScaleType.MATRIX
     }
 
+    private var imageViewRef: WeakReference<ImageView> = WeakReference(imageView)
+    private var containerRef: WeakReference<ViewGroup> = WeakReference(container)
+
     override fun onTouch(view: View?, event: MotionEvent?): Boolean {
         event ?: return false
+        val imageView = imageViewRef.get() ?: return false
+        val container = containerRef.get() ?: return false
+
         container.parent.requestDisallowInterceptTouchEvent(scale != minScale)
 
         if (!imageView.isEnabled) {
@@ -276,6 +283,9 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
         oldRight: Int,
         oldBottom: Int
     ) {
+        val imageView = imageViewRef.get() ?: return
+        val container = containerRef.get() ?: return
+
         imageView.run {
             setupLayout(left, top, right, bottom)
             initialY = y
@@ -291,6 +301,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun startVerticalTranslateAnimation(velY: Float) {
+        val imageView = imageViewRef.get() ?: return
+
         isViewTranslateAnimationRunning = true
 
         imageView.run {
@@ -316,6 +328,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                     override fun onAnimationEnd(p0: Animator?) {
                         isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
+                        cleanup()
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
@@ -330,6 +343,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun processFlingBitmap(velocityX: Float, velocityY: Float) {
+        val imageView = imageViewRef.get() ?: return
+
         var (velX, velY) = velocityX / scale to velocityY / scale
 
         if (velX == 0f && velY == 0f) {
@@ -412,6 +427,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun zoomInToTargetScale(e: MotionEvent) {
+        val imageView = imageViewRef.get() ?: return
         val startScale = scale
         val endScale = minScale * maxZoom * doubleTapZoomScale
         val focalX = e.x
@@ -449,6 +465,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun zoomOutToMinimumScale(isOverScaling: Boolean = false) {
+        val imageView = imageViewRef.get() ?: return
         val startScale = scale
         val endScale = minScale
         val startLeft = bitmapBounds.left
@@ -506,6 +523,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     private var lastDistY = Float.NaN
 
     private fun processDrag(distanceY: Float) {
+        val imageView = imageViewRef.get() ?: return
+
         if (lastDistY.isNaN()) {
             lastDistY = distanceY
             return
@@ -529,11 +548,14 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun dismissOrRestore() {
+        val imageView = imageViewRef.get() ?: return
+
         if (shouldTriggerDragToDismissAnimation()) {
             if (useFlingToDismissGesture) {
                 startDragToDismissAnimation()
             } else {
                 onViewTranslateListener?.onDismiss(imageView)
+                cleanup()
             }
         } else {
             restoreViewTransform()
@@ -543,6 +565,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     private fun shouldTriggerDragToDismissAnimation() = dragDistance() > dragToDismissThreshold
 
     private fun restoreViewTransform() {
+        val imageView = imageViewRef.get() ?: return
+
         imageView.run {
             animate()
                 .setDuration(restoreAnimationDuration)
@@ -574,6 +598,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun startDragToDismissAnimation() {
+        val imageView = imageViewRef.get() ?: return
+
         imageView.run {
             val translationY = if (y - initialY > 0) {
                 originalViewBounds.top + height - top
@@ -597,6 +623,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
                     override fun onAnimationEnd(p0: Animator?) {
                         isViewTranslateAnimationRunning = false
                         onViewTranslateListener?.onDismiss(imageView)
+                        cleanup()
                     }
 
                     override fun onAnimationCancel(p0: Animator?) {
@@ -630,7 +657,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
 
     private fun isDragging() = dragDistance() > 0f
 
-    private fun viewOffsetY() = imageView.y - initialY
+    private fun viewOffsetY() = imageViewRef.get()?.y ?: 0 - initialY
 
     /**
      * targetScale: new scale
@@ -647,6 +674,7 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun setTransform() {
+        val imageView = imageViewRef.get() ?: return
         transfrom.apply {
             reset()
             postTranslate(-imageWidth / 2, -imageHeight / 2)
@@ -657,13 +685,14 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun getBitmap(): Bitmap? {
-        return (imageView.drawable as? BitmapDrawable)?.bitmap
+        return (imageViewRef.get()?.drawable as? BitmapDrawable)?.bitmap
     }
 
     /**
      * setup layout
      */
     private fun setupLayout(left: Int, top: Int, right: Int, bottom: Int) {
+        val imageView = imageViewRef.get() ?: return
         originalViewBounds.set(left, top, right, bottom)
         imageView.run {
             val bm = getBitmap()
@@ -682,6 +711,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun constrainBitmapBounds(animate: Boolean = false) {
+        val imageView = imageViewRef.get() ?: return
+
         if (isBitmapTranslateAnimationRunning || isBitmapScaleAnimationRunninng) {
             return
         }
@@ -745,6 +776,8 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
      * calc canvas/bitmap bounds
      */
     private fun calcBounds() {
+        val imageView = imageViewRef.get() ?: return
+
         imageView.run {
             // calc canvas bounds
             canvasBounds = RectF(
@@ -849,11 +882,13 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     private fun changeBackgroundAlpha(amount: Float) {
+        val container = containerRef.get() ?: return
         val newAlpha = ((1.0f - amount) * 255).roundToInt()
         container.background.mutate().alpha = newAlpha
     }
 
     fun setDragToDismissDistance(distance: Int) {
+        val imageView = imageViewRef.get() ?: return
         dragToDismissThreshold = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             distance.toFloat(),
@@ -862,6 +897,22 @@ class Loupe(var imageView: ImageView, var container: ViewGroup) : View.OnTouchLi
     }
 
     fun setDragToDismissDistance(heightRatio: Float) {
+        val imageView = imageViewRef.get() ?: return
         dragToDismissThreshold = imageView.height * heightRatio
+    }
+
+    private fun cleanup() {
+        imageViewRef.get()?.apply {
+            imageMatrix = null
+            y = 0f
+            animate().cancel()
+        }
+        containerRef.get()?.apply {
+            setOnTouchListener(null)
+            removeOnLayoutChangeListener(null)
+            visibility = View.INVISIBLE
+        }
+        imageViewRef.clear()
+        containerRef.clear()
     }
 }
