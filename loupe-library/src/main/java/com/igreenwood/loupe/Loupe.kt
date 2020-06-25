@@ -677,6 +677,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         calcBounds()
         // offset to focalPoint
         offsetToZoomFocalPoint(focalX, focalY, lastBounds, bitmapBounds)
+        onScaleChangedListener?.onScaleChange(targetScale, focalX, focalY)
     }
 
     private fun setTransform() {
