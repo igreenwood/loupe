@@ -214,6 +214,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
 
     init {
         container.apply {
+            background.alpha = 255
             setOnTouchListener(this@Loupe)
             addOnLayoutChangeListener(this@Loupe)
             scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
@@ -225,7 +226,12 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
                 resources.displayMetrics
             )
         }
-        imageView.scaleType = ImageView.ScaleType.MATRIX
+        imageView.apply {
+            imageMatrix = null
+            y = 0f
+            animate().cancel()
+            scaleType = ImageView.ScaleType.MATRIX
+        }
     }
 
     private var imageViewRef: WeakReference<ImageView> = WeakReference(imageView)
@@ -909,15 +915,9 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     }
 
     private fun cleanup() {
-        imageViewRef.get()?.apply {
-            imageMatrix = null
-            y = 0f
-            animate().cancel()
-        }
         containerRef.get()?.apply {
             setOnTouchListener(null)
             removeOnLayoutChangeListener(null)
-            visibility = View.INVISIBLE
         }
         imageViewRef.clear()
         containerRef.clear()
