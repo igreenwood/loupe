@@ -57,6 +57,8 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     var maxZoom = DEFAULT_MAX_ZOOM
     // use fling gesture for dismiss
     var useFlingToDismissGesture = true
+    // flag to enable or disable drag to dismiss
+    var useDragToDismiss = true
     // duration millis for dismiss animation
     var dismissAnimationDuration = DEFAULT_ANIM_DURATION
     // duration millis for restore animation
@@ -174,7 +176,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
 
                 if (scale > minScale) {
                     processScroll(distanceX, distanceY)
-                } else if (scale == minScale) {
+                } else if (useDragToDismiss && scale == minScale) {
                     processDrag(distanceY)
                 }
                 return true
