@@ -40,6 +40,14 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         const val MIN_FLING_VELOCITY = 1500f
         const val DEFAULT_DOUBLE_TAP_ZOOM_SCALE = 0.5f
         val DEFAULT_INTERPOLATOR = DecelerateInterpolator()
+
+        fun create(
+            imageView: ImageView,
+            container: ViewGroup,
+            config: Loupe.() -> Unit = { }
+        ): Loupe {
+            return Loupe(imageView, container).apply(config)
+        }
     }
 
     interface OnViewTranslateListener {
