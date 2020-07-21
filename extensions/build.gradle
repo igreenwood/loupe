@@ -5,9 +5,9 @@ apply plugin: 'kotlin-android'
 publish {
     userOrg = 'isseiaoki'
     groupId = 'com.igreenwood.loupe'
-    artifactId = 'loupe'
-    publishVersion = '1.1.0'
-    desc = 'ImageView Helper for Android that supports pinch-to-zoom and swipe-to-dismiss gesture.'
+    artifactId = 'extensions'
+    publishVersion = '1.0.0'
+    desc = 'loupe extensions'
     website = 'https://github.com/igreenwood/loupe'
 }
 
@@ -23,9 +23,8 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    api project(":loupe-library")
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

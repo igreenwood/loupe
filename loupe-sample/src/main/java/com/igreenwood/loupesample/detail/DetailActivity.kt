@@ -22,11 +22,13 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.igreenwood.loupe.Loupe
+import com.igreenwood.loupe.extensions.createLoupe
+import com.igreenwood.loupe.extensions.setOnViewTranslateListener
 import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.databinding.ItemImageBinding
 import com.igreenwood.loupesample.util.Pref
-import kotlinx.android.synthetic.main.activity_detail.*
+import kotlinx.android.synthetic.main.activity_detail.viewpager
 
 class DetailActivity : AppCompatActivity() {
 
@@ -43,6 +45,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityDetailBinding
+
     @Suppress("UNCHECKED_CAST")
     private val urls: List<String> by lazy { intent.getSerializableExtra(ARGS_IMAGE_URLS) as List<String> }
     private val initialPos: Int by lazy { intent.getIntExtra(ARGS_INITIAL_POSITION, 0) }
@@ -159,7 +162,8 @@ class DetailActivity : AppCompatActivity() {
                         ): Boolean {
                             image.transitionName =
                                 context.getString(R.string.shared_image_transition, position)
-                            val loupe = Loupe(image, container).apply {
+
+                            val loupe = createLoupe(image, container) {
                                 useFlingToDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
@@ -170,24 +174,11 @@ class DetailActivity : AppCompatActivity() {
                                 restoreAnimationDuration = Pref.restoreAnimationDuration
                                 viewDragFriction = Pref.viewDragFriction
 
-                                onViewTranslateListener = object : Loupe.OnViewTranslateListener {
-
-                                    override fun onStart(view: ImageView) {
-                                        hideToolbar()
-                                    }
-
-                                    override fun onViewTranslate(view: ImageView, amount: Float) {
-
-                                    }
-
-                                    override fun onRestore(view: ImageView) {
-                                        showToolbar()
-                                    }
-
-                                    override fun onDismiss(view: ImageView) {
-                                        finishAfterTransition()
-                                    }
-                                }
+                                setOnViewTranslateListener(
+                                    onStart = { hideToolbar() },
+                                    onRestore = { showToolbar() },
+                                    onDismiss = { finishAfterTransition() }
+                                )
                             }
 
                             loupeMap[position] = loupe
@@ -238,7 +229,7 @@ class DetailActivity : AppCompatActivity() {
                             dataSource: DataSource?,
                             isFirstResource: Boolean
                         ): Boolean {
-                            val loupe = Loupe(image, container).apply {
+                            val loupe = createLoupe(image, container) {
                                 useFlingToDismissGesture = !Pref.useSharedElements
                                 maxZoom = Pref.maxZoom
                                 flingAnimationDuration = Pref.flingAnimationDuration
@@ -249,24 +240,11 @@ class DetailActivity : AppCompatActivity() {
                                 restoreAnimationDuration = Pref.restoreAnimationDuration
                                 viewDragFriction = Pref.viewDragFriction
 
-                                onViewTranslateListener = object : Loupe.OnViewTranslateListener {
-
-                                    override fun onStart(view: ImageView) {
-                                        hideToolbar()
-                                    }
-
-                                    override fun onViewTranslate(view: ImageView, amount: Float) {
-
-                                    }
-
-                                    override fun onRestore(view: ImageView) {
-                                        showToolbar()
-                                    }
-
-                                    override fun onDismiss(view: ImageView) {
-                                        finish()
-                                    }
-                                }
+                                setOnViewTranslateListener(
+                                    onStart = { hideToolbar() },
+                                    onRestore = { showToolbar() },
+                                    onDismiss = { finish() }
+                                )
                             }
 
                             loupeMap[position] = loupe

@@ -1,2 +1,2 @@
-include ':loupe-sample', ':loupe-library'
+include ':loupe-sample', ':loupe-library', ':extensions'
 rootProject.name='loupe'

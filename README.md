@@ -11,20 +11,25 @@ You can implement the Twitter-like image viewer in 10 minutes.
 
 ## Download
 
-Project `build.gradle`
+Project `build.gradle` 
+
 ```groovy
 repositories {
     jcenter()
 }
 ```
 App `build.gradle`
+
 ```groovy
 dependencies {
-    implementation 'com.igreenwood:loupe:LATEST_VERSION'
+    implementation 'com.igreenwood.loupe:loupe:LOUPE_VERSION'
+    // optional
+    implementation 'com.igreenwood.loupe:extensions:EXTENSIONS_VERSION'
 }
 ```
 
-`LATEST_VERSION` is [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/loupe/images/download.svg) ](https://bintray.com/isseiaoki/maven/loupe/_latestVersion).
+- `LOUPE_VERSION` is [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/loupe/images/download.svg) ](https://bintray.com/isseiaoki/maven/loupe/_latestVersion).
+- `EXTENSIONS_VERSION` is [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/extensions/images/download.svg) ](https://bintray.com/isseiaoki/maven/extensions/_latestVersion)
 
 ## Quick Start
 
@@ -37,6 +42,7 @@ Once the user swipe down the image in `DetailActivity`, it will close `DetailAct
 If you do not use `Shared Element Transition`, you don't need to any additional code to `MasterActivity.kt`.
 
 #### 1. In your `activity_detail.xml`, wrap your full screen `ImageView` with `ViewGroup` like `FrameLayout` (except for ViewPager).
+
 This step is required for avoiding touch handling conflicts. Set the background color to this `ViewGroup`, if you want to change alpha of background whenever the view position changed.
 
 ```xml
@@ -52,17 +58,12 @@ This step is required for avoiding touch handling conflicts. Set the background 
 </FrameLayout>
 ```
 
-#### 2. In your `DetailActivity.kt`, create `Loupe` instance.
+#### 2. In your `DetailActivity.kt`, create `Loupe` instance and implement `onViewTranslateListener` .
+
 The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
 
 ```kotlin
-val loupe = Loupe(imageView, container)
-```
-
-#### 3. In your `DetailActivity.kt`, implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
-
-```kotlin
-val loupe = Loupe(imageView, container).apply { // imageView is your ImageView
+val loupe = Loupe.create(imageView, container) { // imageView is your ImageView
     onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
         override fun onStart(view: ImageView) {
@@ -92,6 +93,7 @@ Now your `ImageView` supports `pinch-to-zoom` and `swipe-to-dismiss` gesture :sm
 When using `Shared Element Transition`, the code is little more complicated.
 
 #### 1. Add `app/res/transition/smooth_transition.xml` to your project. (Change the file name to what you want.)
+
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -135,6 +137,7 @@ Set the background color to this `ViewGroup`, if you want to change alpha of bac
 ```
 
 #### 4. In `MasterActivity.kt`, set the transition name to the target `ImageView` and pass the shared element information via Bundle.
+
 ```kotlin
 targetImageView.transitionName = "your_transition_name"
 
@@ -152,22 +155,14 @@ startActivity(
 
 #### 5. In `DetailActivity.kt`, call `postponeEnterTransition()` in `onCreate()`. After the image loaded,  set the same transition name to the target `ImageView`, and call `startPostponedEnterTransition()`.
 
-#### 6. In `DetailActivity.kt`, create `Loupe` instance after the image has loaded.
+#### 6. In `DetailActivity.kt`, create `Loupe` instance after the image has loaded and implement `OnViewTranslateListener` .
 
 The first argument is your `ImageView` and the second argument is the direct parent of the `ImageView`.
 In default, Loupe uses vertical translate animation on dismissing the `ImageView`.
 If you want to use `Shared Element Transition`, set `useFlingToDismissGesture` to `false`.
 
 ```kotlin
-val loupe = Loupe(imageView, container).apply {
-    useFlingToDismissGesture = false
-}
-```
-
-#### 7. Implement `OnViewTranslateListener` and add the code to exit the screen in `onDismiss()` block.
-
-```kotlin
-val loupe = Loupe(imageView, container).apply { // imageView is your ImageView
+val loupe = Loupe.create(imageView, container) { // imageView is your ImageView
     useFlingToDismissGesture = false
     onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
@@ -209,7 +204,7 @@ If you want to execute some code while swipe-to-dismiss gesture, use `OnViewTran
 The code something like this.
 
 ```kotlin
-val loupe = Loupe(imageView, container).apply {
+val loupe = Loupe.create(imageView, container) {
     useFlingToDismissGesture = false
     onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
@@ -226,6 +221,7 @@ val loupe = Loupe(imageView, container).apply {
 For more details, see [the sample program](https://github.com/igreenwood/loupe/tree/master/loupe-sample).
 
 ## Using Loupe with image loader libraries
+
 Loupe is just a helper of the ImageView.
 You can use Loupe with any image loader libraries.
 If you use with the image loader library, it would be better that initialize `Loupe` after the image loading has finished.
@@ -250,17 +246,18 @@ Glide.with(imageView.context).load(url)
             dataSource: DataSource?,
             isFirstResource: Boolean
         ): Boolean {
-            val loupe = Loupe(image, container).apply { // initialize Loupe after the image loading has finished
+            val loupe = Loupe.create(image, container) { // initialize Loupe after the image loading has finished
 
                 onViewTranslateListener = object : Loupe.OnViewTranslateListener {
 
-                override fun onStart(view: ImageView) {}
+                    override fun onStart(view: ImageView) {}
 
-                override fun onViewTranslate(view: ImageView, amount: Float) {}
+                    override fun onViewTranslate(view: ImageView, amount: Float) {}
 
-                override fun onRestore(view: ImageView) {}
+                    override fun onRestore(view: ImageView) {}
 
-                override fun onDismiss(view: ImageView) {}
+                    override fun onDismiss(view: ImageView) {}
+                }
             }
             return false
         }
@@ -269,10 +266,11 @@ Glide.with(imageView.context).load(url)
 ```
 
 ## Customization
+
 The customizable parameters is below.
 
 ```kotlin
-Loupe(image, container).apply {
+Loupe.create(image, container) {
         // max zoom(> 1f)
         maxZoom = 5.0f
         // duration millis for dismiss animation
@@ -314,20 +312,49 @@ You can try parameters with [the sample program](https://github.com/igreenwood/l
 <img src="art/setting-view.png" width="260">
 
 ## Requirements
+
 Supported on API Level 21 and above.
 
 ## Proguard
+
 ```
 -dontwarn com.igreenwood.loupe**
 -keep class com.igreenwood.loupe** { *; }
 -keep interface com.igreenwood.loupe** { *; }
 ```
 
+## Extensions
+
+Loupe extensions makes your code simpler. (Developed by @adrianolc :tada:)
+
+```groovy
+dependencies {
+    implementation 'com.igreenwood.loupe:loupe:LOUPE_VERSION'
+    implementation 'com.igreenwood.loupe:extensions:EXTENSIONS_VERSION'
+}
+```
+
+```kotlin
+val loupe = createLoupe(imageView, container) {
+    useFlingToDismissGesture = false
+    setOnViewTranslateListener(
+        onStart = { hideToolbar() },
+        onRestore = { showToolbar() },
+        onDismiss = { finishAfterTransition() }
+    )
+}
+```
+
+
 ## Developed By
+
 Issei Aoki - <i.greenwood.dev@gmail.com>
 
-## Apps using loupe
-If you are using my library, please let me know your app name :smile:
+## Apps using Loupe
+
+- [HiNative](https://play.google.com/store/apps/details?id=com.lang8.hinative)
+
+If you are using our library, please let me know your app name :smile:
 
 ## License
 ```
