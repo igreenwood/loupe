@@ -353,6 +353,7 @@ Issei Aoki - <i.greenwood.dev@gmail.com>
 ## Apps using Loupe
 
 - [HiNative](https://play.google.com/store/apps/details?id=com.lang8.hinative)
+- [Choco](https://play.google.com/store/apps/details?id=app.choco.chocoapp)
 
 If you are using our library, please let me know your app name :smile:
 
