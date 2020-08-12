@@ -58,6 +58,12 @@ class MasterActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         adapter.apply {
+            addAll(ImageUrls.urlGifs.map {
+                SingleImageItem(
+                    it,
+                    singleImageListener
+                )
+            })
             add(
                 MultipleImageItem(
                     ImageUrls.urls1,

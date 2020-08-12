@@ -2,7 +2,6 @@ package com.igreenwood.loupe
 
 import android.animation.Animator
 import android.animation.ValueAnimator
-import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.Rect
@@ -707,10 +706,6 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         imageView.imageMatrix = transfrom
     }
 
-    private fun getBitmap(): Bitmap? {
-        return (imageViewRef.get()?.drawable as? BitmapDrawable)?.bitmap
-    }
-
     /**
      * setup layout
      */
@@ -718,10 +713,11 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         val imageView = imageViewRef.get() ?: return
         originalViewBounds.set(left, top, right, bottom)
         imageView.run {
-            val bm = getBitmap()
-            if (width == 0 || height == 0 || bm == null) return
-            imageWidth = bm.width.toFloat()
-            imageHeight = bm.height.toFloat()
+            val drawable = imageViewRef.get()?.drawable
+            val bitmap = (drawable as? BitmapDrawable)?.bitmap
+            if (width == 0 || height == 0 || drawable == null) return
+            imageWidth = (bitmap?.width ?: drawable.intrinsicWidth).toFloat()
+            imageHeight = (bitmap?.height ?: drawable.intrinsicHeight).toFloat()
             val canvasWidth = (width - paddingLeft - paddingRight).toFloat()
             val canvasHeight = (height - paddingTop - paddingBottom).toFloat()
 
