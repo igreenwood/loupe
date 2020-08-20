@@ -49,7 +49,7 @@ class DetailActivity : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     private val urls: List<String> by lazy { intent.getSerializableExtra(ARGS_IMAGE_URLS) as List<String> }
     private val initialPos: Int by lazy { intent.getIntExtra(ARGS_INITIAL_POSITION, 0) }
-    private lateinit var adapter: ImageAdapter
+    private var adapter: ImageAdapter? = null
 
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +68,16 @@ class DetailActivity : AppCompatActivity() {
 
         initToolbar()
         initViewPager()
+    }
+
+    override fun onBackPressed() {
+        adapter?.clear()
+        super.onBackPressed()
+    }
+
+    override fun onDestroy() {
+        adapter = null
+        super.onDestroy()
     }
 
     private fun initViewPager() {
@@ -117,6 +127,7 @@ class DetailActivity : AppCompatActivity() {
 
         private var loupeMap = hashMapOf<Int, Loupe>()
         private var views = hashMapOf<Int, ImageView>()
+        private var currentPos = 0
 
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val binding = ItemImageBinding.inflate(LayoutInflater.from(context))
@@ -132,6 +143,11 @@ class DetailActivity : AppCompatActivity() {
 
         override fun isViewFromObject(view: View, obj: Any): Boolean {
             return view == obj
+        }
+
+        override fun setPrimaryItem(container: ViewGroup, position: Int, obj: Any) {
+            super.setPrimaryItem(container, position, obj)
+            this.currentPos = position
         }
 
         override fun getCount() = urls.size
@@ -258,5 +274,14 @@ class DetailActivity : AppCompatActivity() {
             }
         }
 
+        fun clear() {
+            // clear refs
+            loupeMap.forEach {
+                val loupe = it.value
+                // clear refs
+                loupe.cleanup()
+            }
+            loupeMap.clear()
+        }
     }
 }
