@@ -70,6 +70,11 @@ class DetailActivity : AppCompatActivity() {
         initViewPager()
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        adapter.clear()
+    }
+
     private fun initViewPager() {
         adapter = ImageAdapter(this, urls)
         binding.viewpager.adapter = adapter
@@ -258,5 +263,12 @@ class DetailActivity : AppCompatActivity() {
             }
         }
 
+        fun clear() {
+            loupeMap.forEach {
+                val loupe = it.value
+                // clear refs
+                loupe.cleanup()
+            }
+        }
     }
 }

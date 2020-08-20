@@ -925,7 +925,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         startVerticalTranslateAnimation(MIN_FLING_VELOCITY)
     }
 
-    private fun cleanup() {
+    fun cleanup() {
         containerRef.get()?.apply {
             setOnTouchListener(null)
             removeOnLayoutChangeListener(null)
