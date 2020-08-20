@@ -920,6 +920,11 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         dragToDismissThreshold = imageView.height * heightRatio
     }
 
+    fun dismiss() {
+        // Animate down offscreen (the finish listener will call the cleanup method)
+        startVerticalTranslateAnimation(MIN_FLING_VELOCITY)
+    }
+
     private fun cleanup() {
         containerRef.get()?.apply {
             setOnTouchListener(null)
