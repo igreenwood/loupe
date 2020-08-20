@@ -2,8 +2,9 @@ version: 2.1
 jobs:
   build:
     working_directory: ~/code
+    # temporary work around for docker image collapsing
     docker:
-      - image: circleci/android:api-29
+      - image: circleci/android@sha256:4a57a855cb756fea37cb957cb7b89ee038a55c08dc8d3f542b0b84c2cff29f7d
     environment:
       JVM_OPTS: -Xmx3200m
       GRADLE_OPTS: '-Dorg.gradle.parallel=false -Dorg.gradle.daemon=false'
