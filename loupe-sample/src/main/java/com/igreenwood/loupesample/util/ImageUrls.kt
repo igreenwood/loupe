@@ -36,4 +36,8 @@ object ImageUrls {
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_ian_dooley_on_unsplash.jpg",
         "https://raw.githubusercontent.com/igreenwood/loupe/master/loupe-sample/src/main/res/drawable/photo_by_tom_barrett_on_unsplash.jpg"
     )
+
+    val urlGifs = listOf(
+        "https://media.giphy.com/media/2KFEbDuo2hZTy/giphy.gif"
+    )
 }
