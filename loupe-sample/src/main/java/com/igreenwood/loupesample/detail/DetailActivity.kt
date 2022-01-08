@@ -28,7 +28,6 @@ import com.igreenwood.loupesample.R
 import com.igreenwood.loupesample.databinding.ActivityDetailBinding
 import com.igreenwood.loupesample.databinding.ItemImageBinding
 import com.igreenwood.loupesample.util.Pref
-import kotlinx.android.synthetic.main.activity_detail.viewpager
 
 class DetailActivity : AppCompatActivity() {
 
@@ -206,8 +205,8 @@ class DetailActivity : AppCompatActivity() {
                                         sharedElements: MutableMap<String, View>?
                                     ) {
                                         names ?: return
-                                        val view = views[viewpager.currentItem] ?: return
-                                        val currentPosition: Int = viewpager.currentItem
+                                        val view = views[currentPos] ?: return
+                                        val currentPosition: Int = currentPos
                                         view.transitionName = context.getString(
                                             R.string.shared_image_transition,
                                             currentPosition
