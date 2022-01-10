@@ -1,0 +1,82 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'org.jetbrains.dokka'
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    from android.sourceSets.main.java.srcDirs
+    from android.sourceSets.main.kotlin.srcDirs
+}
+
+tasks.dokkaHtml.configure {
+    outputDirectory.set(file("../documentation/html"))
+}
+
+tasks.withType(dokkaHtml.getClass()).configureEach {
+    pluginsMapConfiguration.
+            set(["org.jetbrains.dokka.base.DokkaBase": """{ "separateInheritedMembers": true}"""])
+}
+
+task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
+    archiveClassifier.set('javadoc')
+    from dokkaJavadoc.outputDirectory
+}
+
+artifacts {
+    archives androidSourcesJar
+    archives javadocJar
+}
+
+signing {
+    sign publishing.publications
+}
+
+def SITE_URL = 'https://github.com/igreenwood/loupe'
+def GIT_URL = 'https://github.com/igreenwood/loupe.git'
+def PUBLISH_GROUP_ID = 'io.github.igreenwood.loupe'
+
+group = PUBLISH_GROUP_ID
+version = PUBLISH_VERSION
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                groupId PUBLISH_GROUP_ID
+                version PUBLISH_VERSION
+
+                from components.release
+
+                artifact androidSourcesJar
+                artifact javadocJar
+
+                pom {
+                    artifactId MODULE_NAME
+                    name = MODULE_NAME
+                    description = MODULE_DESCRIPTION
+                    url = 'https://github.com/igreenwood/loupe'
+
+                    licenses {
+                        license {
+                            name = 'The MIT License'
+                            url = 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'igreenwood'
+                            name = 'Issei Aoki'
+                            email = 'i.greenwood.dev@gmail.com'
+                        }
+                    }
+
+                    scm {
+                        connection = GIT_URL
+                        developerConnection = GIT_URL
+                        url = SITE_URL
+                    }
+                }
+            }
+        }
+    }
+}

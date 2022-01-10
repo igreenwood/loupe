@@ -15,21 +15,19 @@ Project `build.gradle`
 
 ```groovy
 repositories {
-    jcenter()
+    mavenCentral()
 }
 ```
 App `build.gradle`
 
 ```groovy
 dependencies {
-    implementation 'com.igreenwood.loupe:loupe:LOUPE_VERSION'
+    implementation 'io.github.igreenwood.loupe:loupe:1.2.2'
     // optional
-    implementation 'com.igreenwood.loupe:extensions:EXTENSIONS_VERSION'
+    implementation 'io.github.igreenwood.loupe:extensions:1.0.1'
 }
 ```
-
-- `LOUPE_VERSION` is [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/loupe/images/download.svg) ](https://bintray.com/isseiaoki/maven/loupe/_latestVersion).
-- `EXTENSIONS_VERSION` is [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/extensions/images/download.svg) ](https://bintray.com/isseiaoki/maven/extensions/_latestVersion)
+You can check the released version [here](https://repo1.maven.org/maven2/io/github/igreenwood/loupe/).
 
 ## Quick Start
 
