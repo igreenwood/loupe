@@ -1,4 +1,4 @@
-# Loupe [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Loupe-lightgrey.svg?style=flat)](https://android-arsenal.com/details/1/8047) [ ![Download](https://api.bintray.com/packages/isseiaoki/maven/loupe/images/download.svg) ](https://bintray.com/isseiaoki/maven/loupe/_latestVersion) [![CircleCI](https://circleci.com/gh/igreenwood/loupe/tree/master.svg?style=svg)](https://circleci.com/gh/igreenwood/loupe/tree/master)
+# Loupe [![Android Arsenal](https://img.shields.io/badge/Android%20Arsenal-Loupe-lightgrey.svg?style=flat)](https://android-arsenal.com/details/1/8047)
 
 Loupe is an ImageView Helper for Android that supports `pinch-to-zoom` and `swipe-to-dismiss` gesture.
 
