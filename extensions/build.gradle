@@ -1,6 +1,12 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+ext {
+    PUBLISH_VERSION = '1.0.1'
+    MODULE_NAME = 'extensions'
+    MODULE_DESCRIPTION = 'extensions for loupe'
+}
+
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -19,3 +25,5 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 }
+
+apply from: "${project.rootDir}/gradle/publish/module.gradle"
