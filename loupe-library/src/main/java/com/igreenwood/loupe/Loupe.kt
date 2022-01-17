@@ -921,8 +921,11 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     }
 
     fun dismiss() {
-        // Animate down offscreen (the finish listener will call the cleanup method)
-        startVerticalTranslateAnimation(MIN_FLING_VELOCITY)
+        // Only start the animation if it's not already running.
+        if (!isViewTranslateAnimationRunning) {
+            // Animate down offscreen (the finish listener will call the cleanup method)
+            startVerticalTranslateAnimation(MIN_FLING_VELOCITY)
+        }
     }
 
     fun cleanup() {
