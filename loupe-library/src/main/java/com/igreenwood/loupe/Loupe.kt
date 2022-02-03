@@ -54,6 +54,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
         fun onViewTranslate(view: ImageView, amount: Float)
         fun onDismiss(view: ImageView)
         fun onRestore(view: ImageView)
+        fun onClick(view: ImageView)
     }
 
     interface OnScaleChangedListener {
@@ -170,7 +171,11 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     private val onGestureListener: GestureDetector.OnGestureListener =
         object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent?): Boolean = true
-
+            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+                e ?: return false
+                onViewTranslateListener?.onClick(imageView)
+                return true
+            }
             override fun onScroll(
                 e1: MotionEvent?,
                 e2: MotionEvent?,
