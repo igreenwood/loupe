@@ -223,7 +223,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
 
     init {
         container.apply {
-            background.alpha = 255
+            background?.alpha = 255
             setOnTouchListener(this@Loupe)
             addOnLayoutChangeListener(this@Loupe)
             scaleGestureDetector = ScaleGestureDetector(context, onScaleGestureListener)
@@ -315,7 +315,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
             } else {
                 setDragToDismissDistance(DEFAULT_DRAG_DISMISS_DISTANCE_IN_DP)
             }
-            container.background.alpha = 255
+            container.background?.alpha = 255
             setTransform()
             postInvalidate()
         }
@@ -903,7 +903,7 @@ class Loupe(imageView: ImageView, container: ViewGroup) : View.OnTouchListener,
     private fun changeBackgroundAlpha(amount: Float) {
         val container = containerRef.get() ?: return
         val newAlpha = ((1.0f - amount) * 255).roundToInt()
-        container.background.mutate().alpha = newAlpha
+        container.background?.mutate()?.alpha = newAlpha
     }
 
     fun setDragToDismissDistance(distance: Int) {
