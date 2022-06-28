@@ -352,7 +352,7 @@ Issei Aoki - <i.greenwood.dev@gmail.com>
 
 - [HiNative](https://play.google.com/store/apps/details?id=com.lang8.hinative)
 - [Choco](https://play.google.com/store/apps/details?id=app.choco.chocoapp)
-- [c:geo](https://play.google.com/store/apps/details?id=cgeo.geocaching) [Source@github](https://github.com/cgeo/cgeo) [website](https://www.cgeo.org/)
+- [c:geo](https://play.google.com/store/apps/details?id=cgeo.geocaching) ([source@github](https://github.com/cgeo/cgeo), [website](https://www.cgeo.org/))
 
 If you are using our library, please let me know your app name :smile:
 
